@@ -1,5 +1,7 @@
 export type ServiceCategory = 'Video' | 'Music' | 'Book' | 'Game' | 'Gym' | 'Salon' | 'Travel' | 'Food' | 'Dev' | 'Business' | 'AI' | 'Security' | 'Learning' | 'Software' | 'School' | 'Other';
 
+export type BillingCycle = 'monthly' | 'yearly';
+
 export interface Plan {
     id: string;
     name: string;

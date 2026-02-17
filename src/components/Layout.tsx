@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, Search, Settings, Plus } from 'lucide-react';
+import { Home, Settings, Plus } from 'lucide-react';
 
 const Layout: React.FC = () => {
     const location = useLocation();
