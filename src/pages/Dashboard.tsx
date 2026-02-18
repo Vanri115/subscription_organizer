@@ -41,17 +41,19 @@ const Dashboard: React.FC = () => {
     const navigate = useNavigate();
 
     // Sensors for DnD — drag handle approach:
-    // Drag only starts when user grabs the handle icon, so no delay needed.
-    // Distance constraint prevents accidental drags on click.
+    // Short delay (200ms) on the handle to prevent accidental drags on quick taps.
+    // Scroll is unaffected since listeners are only on the handle icon, not the card.
     const sensors = useSensors(
         useSensor(TouchSensor, {
             activationConstraint: {
-                distance: 5,
+                delay: 200,
+                tolerance: 5,
             },
         }),
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 5,
+                delay: 200,
+                tolerance: 5,
             },
         }),
         useSensor(KeyboardSensor, {
