@@ -113,15 +113,15 @@ const Ranking: React.FC = () => {
     };
 
     const fetchPopularData = async () => {
-        const { data } = await supabase.from('subscriptions').select('service_id');
+        const { data } = await supabase
+            .from('subscription_counts')
+            .select('service_id, count')
+            .order('count', { ascending: false });
         if (!data) return;
-        const counts: Record<string, number> = {};
-        data.forEach((row: any) => {
-            if (row.service_id) counts[row.service_id] = (counts[row.service_id] || 0) + 1;
-        });
-        const sorted = Object.entries(counts)
-            .map(([serviceId, votes]) => ({ serviceId, votes }))
-            .sort((a, b) => b.votes - a.votes);
+        const sorted = data.map((row: any) => ({
+            serviceId: row.service_id,
+            votes: row.count,
+        }));
         setPopularRankings(sorted);
     };
 
