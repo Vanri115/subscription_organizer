@@ -6,6 +6,7 @@ import StarRating from '../components/StarRating';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { ArrowLeft, Send, User as UserIcon } from 'lucide-react';
+import { containsProfanity } from '../utils/validator';
 
 interface Review {
     id: number;
@@ -13,6 +14,9 @@ interface Review {
     rating: number;
     comment: string;
     created_at: string;
+    profiles?: {
+        display_name: string;
+    };
 }
 
 const ServiceDetail: React.FC = () => {
@@ -42,16 +46,19 @@ const ServiceDetail: React.FC = () => {
 
         const { data, error } = await supabase
             .from('reviews')
-            .select('*')
+            .select(`
+                *,
+                profiles (display_name)
+            `)
             .eq('service_id', service.id)
             .order('created_at', { ascending: false });
 
         if (!error && data) {
-            setReviews(data);
+            setReviews(data as unknown as Review[]);
 
             // Check if user has reviewed
             if (user) {
-                const userReview = data.find((r) => r.user_id === user.id);
+                const userReview = data.find((r: any) => r.user_id === user.id);
                 if (userReview) {
                     setMyReview({ rating: userReview.rating, comment: userReview.comment });
                     setRating(userReview.rating);
@@ -65,6 +72,11 @@ const ServiceDetail: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user || !service || rating === 0) return;
+
+        if (containsProfanity(comment)) {
+            alert('不適切な表現が含まれているため投稿できません。');
+            return;
+        }
 
         setSubmitting(true);
         const { error } = await supabase
@@ -158,6 +170,7 @@ const ServiceDetail: React.FC = () => {
                                 className="w-full bg-muted border border-border rounded-xl p-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                                 required
                             />
+                            <p className="text-xs text-muted-foreground">※不適切な表現は自動的にブロックされます</p>
                             <button
                                 type="submit"
                                 disabled={submitting || rating === 0}
@@ -188,8 +201,9 @@ const ServiceDetail: React.FC = () => {
                                             <UserIcon size={16} className="text-muted-foreground" />
                                         </div>
                                         <div>
-                                            {/* Mask User ID or show name if available */}
-                                            <p className="text-xs font-bold text-muted-foreground">User {review.user_id.slice(0, 4)}...</p>
+                                            <p className="text-xs font-bold text-foreground">
+                                                {review.profiles?.display_name || `User ${review.user_id.slice(0, 4)}...`}
+                                            </p>
                                             <StarRating rating={review.rating} readonly size={14} />
                                         </div>
                                     </div>

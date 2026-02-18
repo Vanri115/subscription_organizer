@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { UserSubscription } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
 import { calculateTotal, formatCurrency } from '../utils/calculations';
 import { POPULAR_SERVICES } from '../data/services';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Star } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import ServiceIcon from '../components/ServiceIcon';
 
@@ -12,6 +13,8 @@ const Dashboard: React.FC = () => {
     const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
     const [loading, setLoading] = useState(true);
     const [sortMode, setSortMode] = useState<'default' | 'price_desc' | 'price_asc' | 'name_asc'>('default');
+    const navigate = useNavigate();
+
 
     useEffect(() => {
         const loadedSubs = loadSubscriptions();
@@ -224,6 +227,16 @@ const Dashboard: React.FC = () => {
                                                     </span>
                                                 )}
                                             </div>
+
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/service/${sub.serviceId}`);
+                                                }}
+                                                className="p-1 mr-2 text-muted-foreground hover:text-yellow-400 hover:bg-muted rounded-full transition-colors"
+                                            >
+                                                <Star size={14} />
+                                            </button>
 
                                             <div className="flex items-center mb-0.5 shrink-0">
                                                 {/* Tiny Toggle */}

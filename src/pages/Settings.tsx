@@ -1,17 +1,88 @@
-import React from 'react';
-import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { validateDisplayName } from '../utils/validator';
+import { POPULAR_SERVICES } from '../data/services';
+import StarRating from '../components/StarRating';
+
+
+interface UserReview {
+    id: number;
+    service_id: string;
+    rating: number;
+    comment: string;
+    created_at: string;
+}
 
 const Settings: React.FC = () => {
     const { theme, toggleTheme, currency, setCurrency } = useSettings();
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
 
+    // Profile State
+    const [displayName, setDisplayName] = useState('');
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [nameError, setNameError] = useState<string | null>(null);
+
+    // Reviews State
+    const [myReviews, setMyReviews] = useState<UserReview[]>([]);
+
+    useEffect(() => {
+        if (user) {
+            fetchProfile();
+            fetchMyReviews();
+        }
+    }, [user]);
+
+    const fetchProfile = async () => {
+        if (!user) return;
+        const { data } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', user.id)
+            .single();
+
+        if (data?.display_name) {
+            setDisplayName(data.display_name);
+        }
+    };
+
+    const fetchMyReviews = async () => {
+        if (!user) return;
+        const { data } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (data) setMyReviews(data);
+    };
+
+    const handleSaveName = async () => {
+        if (!user) return;
+        const error = validateDisplayName(displayName);
+        if (error) {
+            setNameError(error);
+            return;
+        }
+
+        const { error: upsertError } = await supabase
+            .from('profiles')
+            .upsert({ id: user.id, display_name: displayName });
+
+        if (upsertError) {
+            alert('プロフィールの保存に失敗しました');
+        } else {
+            setIsEditingName(false);
+            setNameError(null);
+        }
+    };
+
     const handleClearData = () => {
         if (window.confirm('本当にすべてのデータを削除しますか？この操作は取り消せません。')) {
-            // Only remove subscription data, keep settings
             import('../utils/storage').then(({ clearSubscriptions }) => {
                 clearSubscriptions();
                 window.location.reload();
@@ -36,19 +107,93 @@ const Settings: React.FC = () => {
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">アカウント</h2>
                 <div className="bg-card rounded-2xl overflow-hidden border border-border shadow-sm">
                     {user ? (
-                        <div className="p-4">
-                            <div className="flex items-center space-x-3 mb-4">
-                                <div className="p-2 bg-primary/10 rounded-full text-primary">
+                        <div className="p-4 space-y-4">
+                            {/* Profile Info */}
+                            <div className="flex items-center space-x-3">
+                                <div className="p-3 bg-primary/10 rounded-full text-primary">
                                     <User size={24} />
                                 </div>
-                                <div className="overflow-hidden">
-                                    <p className="font-bold text-sm truncate">{user.email}</p>
-                                    <p className="text-xs text-muted-foreground">ログイン中</p>
+                                <div className="flex-1 overflow-hidden">
+                                    {isEditingName ? (
+                                        <div className="space-y-2">
+                                            <input
+                                                type="text"
+                                                value={displayName}
+                                                onChange={(e) => setDisplayName(e.target.value)}
+                                                placeholder="表示名を入力"
+                                                className="w-full bg-muted border border-border rounded px-2 py-1 text-sm focus:outline-none focus:border-primary"
+                                            />
+                                            {nameError && <p className="text-xs text-red-500">{nameError}</p>}
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={handleSaveName}
+                                                    className="px-3 py-1 bg-primary text-primary-foreground text-xs rounded-md"
+                                                >
+                                                    保存
+                                                </button>
+                                                <button
+                                                    onClick={() => setIsEditingName(false)}
+                                                    className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded-md"
+                                                >
+                                                    キャンセル
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="font-bold text-base truncate">
+                                                    {displayName || '名無しさん'}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">{user.email}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => setIsEditingName(true)}
+                                                className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
+
+                            {/* My Reviews Link (Accordion style or separate page? List here implies checking history) */}
+                            {myReviews.length > 0 && (
+                                <div className="pt-4 border-t border-border">
+                                    <h3 className="text-sm font-bold mb-3 flex items-center">
+                                        <MessageSquare size={16} className="mr-2" />
+                                        投稿したレビュー ({myReviews.length})
+                                    </h3>
+                                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1 scrollbar-thin">
+                                        {myReviews.map(review => {
+                                            const service = POPULAR_SERVICES.find(s => s.id === review.service_id);
+                                            return (
+                                                <div
+                                                    key={review.id}
+                                                    onClick={() => navigate(`/service/${review.service_id}`)}
+                                                    className="bg-muted/30 p-3 rounded-xl cursor-pointer hover:bg-muted/60 transition-colors"
+                                                >
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="font-bold text-sm">{service?.name || review.service_id}</span>
+                                                        <span className="text-[10px] text-muted-foreground">
+                                                            {new Date(review.created_at).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center space-x-2 mb-1">
+                                                        <StarRating rating={review.rating} readonly size={12} />
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground line-clamp-1">{review.comment}</p>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
                             <button
                                 onClick={handleLogout}
-                                className="w-full flex items-center justify-center space-x-2 bg-muted hover:bg-muted/80 text-foreground py-2 rounded-xl transition-colors text-sm font-medium"
+                                className="w-full flex items-center justify-center space-x-2 bg-muted hover:bg-muted/80 text-foreground py-2 rounded-xl transition-colors text-sm font-medium mt-2"
                             >
                                 <LogOut size={16} />
                                 <span>ログアウト</span>
@@ -69,11 +214,6 @@ const Settings: React.FC = () => {
                         </button>
                     )}
                 </div>
-                {!user && (
-                    <p className="text-xs text-muted-foreground px-2">
-                        ログインするとクラウド同期やランキング機能が利用できます。
-                    </p>
-                )}
             </section>
 
             {/* Appearance Section */}
