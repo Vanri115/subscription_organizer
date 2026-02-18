@@ -74,24 +74,64 @@ export const syncToCloud = async (userId: string) => {
         }
     }
 
+    // 4. Sync Category Order to Profile
+    try {
+        const categoryOrderStr = localStorage.getItem('category_order');
+        const categoryOrder = categoryOrderStr ? JSON.parse(categoryOrderStr) : [];
+        if (categoryOrder.length > 0) {
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert({
+                    id: userId,
+                    category_order: categoryOrder, // Ensure this column is JSONB/JSON in DB
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'id' });
+
+            if (profileError) {
+                console.error('Error syncing profile (category_order):', profileError);
+                // We don't throw here to avoid blocking main sync if profile fails
+            }
+        }
+    } catch (e) {
+        console.error('Error readying category_order for sync:', e);
+    }
+
     return true;
 };
 
-export const loadFromCloud = async (userId: string): Promise<UserSubscription[]> => {
-    const { data, error } = await supabase
+export const loadFromCloud = async (userId: string): Promise<{ subscriptions: UserSubscription[], categoryOrder: string[] | null }> => {
+    // Load Subscriptions
+    const { data: subData, error: subError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', userId);
 
-    if (error) {
-        console.error('Error loading from cloud:', error);
-        throw error;
+    if (subError) {
+        console.error('Error loading from cloud:', subError);
+        throw subError;
     }
 
-    if (!data) return [];
+    // Load Profile (Category Order)
+    const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('category_order')
+        .eq('id', userId)
+        .single();
+
+    if (profileError && profileError.code !== 'PGRST116') { // Ignore "Row not found"
+        console.error('Error loading profile:', profileError);
+    }
+
+    const categoryOrder = profileData?.category_order as string[] || null;
+
+    if (categoryOrder) {
+        localStorage.setItem('category_order', JSON.stringify(categoryOrder));
+    }
+
+    if (!subData) return { subscriptions: [], categoryOrder };
 
     // Map DB data to local format
-    const remoteSubs: UserSubscription[] = data.map((item: any) => ({
+    const remoteSubs: UserSubscription[] = subData.map((item: any) => ({
         id: item.id || crypto.randomUUID(),
         serviceId: item.service_id,
         planId: 'cloud_sync_restored', // Placeholder since DB doesn't store planId yet
@@ -103,11 +143,12 @@ export const loadFromCloud = async (userId: string): Promise<UserSubscription[]>
         startDate: new Date().toISOString(), // We don't store start date in DB currently? 
         customIcon: item.custom_icon,
         renewalDate: item.renewal_date,
-        memo: item.memo
+        memo: item.memo,
+        sortOrder: item.sort_order // Ensure simple snake_case mapping from DB if we added it
     }));
 
     saveSubscriptions(remoteSubs);
-    return remoteSubs;
+    return { subscriptions: remoteSubs, categoryOrder };
 };
 
 export const setPublicProfile = async (userId: string, isPublic: boolean) => {

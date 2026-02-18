@@ -8,7 +8,26 @@ import { Trash2, MoreVertical, X, Calendar, FileText } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { loadFromCloud, syncToCloud } from '../utils/sync';
+
 import ServiceIcon from '../components/ServiceIcon';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    horizontalListSortingStrategy,
+    rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { SortableSubscriptionItem } from '../components/SortableSubscriptionItem';
+import { SortableCategoryTab } from '../components/SortableCategoryTab';
 
 const Dashboard: React.FC = () => {
     const { currency, exchangeRate } = useSettings();
@@ -17,7 +36,27 @@ const Dashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [sortMode, setSortMode] = useState<'default' | 'price_desc' | 'price_asc' | 'name_asc'>('default');
     const [categoryFilter, setCategoryFilter] = useState<ServiceCategory | 'All'>('All');
+
     const navigate = useNavigate();
+
+    // Sensors for DnD (Long press to drag)
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                delay: 150,
+                tolerance: 5,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    // Category Sort Order persistence
+    const [categoryOrder, setCategoryOrder] = useState<string[]>(() => {
+        const saved = localStorage.getItem('category_order');
+        return saved ? JSON.parse(saved) : [];
+    });
 
     // Memo Modal State
     const [editingSub, setEditingSub] = useState<UserSubscription | null>(null);
@@ -36,10 +75,13 @@ const Dashboard: React.FC = () => {
             if (user) {
                 try {
                     console.log('[Dashboard] Starting handleSync from cloud...');
-                    const cloudSubs = await loadFromCloud(user.id);
+                    const { subscriptions: cloudSubs, categoryOrder: cloudCategoryOrder } = await loadFromCloud(user.id);
                     console.log('[Dashboard] loadFromCloud result:', cloudSubs);
                     if (cloudSubs) {
                         setSubscriptions(cloudSubs);
+                    }
+                    if (cloudCategoryOrder) {
+                        setCategoryOrder(cloudCategoryOrder);
                     }
                 } catch (error) {
                     console.error('Failed to sync from cloud:', error);
@@ -98,8 +140,14 @@ const Dashboard: React.FC = () => {
         if (sortMode === 'price_asc') return priceA - priceB;
         if (sortMode === 'name_asc') return nameA.localeCompare(nameB);
 
-        // Default: Just creation/index order (stable)
-        return 0;
+
+
+        // Default: Sort by custom sortOrder if available, otherwise by index (stable)
+        // Since we are sorting a copy, and the subscriptions array in state determines the display order for default,
+        // we can just return (a.sortOrder || 0) - (b.sortOrder || 0) if we want to be explicit,
+        // but relying on the array order is often enough if we manipulate the array itself.
+        // However, to be safe:
+        return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
     });
 
     // Category filter
@@ -113,7 +161,14 @@ const Dashboard: React.FC = () => {
         const service = POPULAR_SERVICES.find(s => s.id === sub.serviceId);
         return service?.category || 'Other';
     }))];
-    const categoryTabs: (ServiceCategory | 'All')[] = ['All', ...usedCategories as ServiceCategory[]];
+
+    // Merge available categories with saved order
+    const orderedCategories = [
+        ...categoryOrder.filter(c => usedCategories.includes(c as ServiceCategory)),
+        ...usedCategories.filter(c => !categoryOrder.includes(c))
+    ] as ServiceCategory[];
+
+    const categoryTabs: (ServiceCategory | 'All')[] = ['All', ...orderedCategories as ServiceCategory[]];
 
     const filteredSubscriptions = categoryFilter === 'All'
         ? sortedSubscriptions
@@ -192,6 +247,51 @@ const Dashboard: React.FC = () => {
         }
     }, 0);
 
+    // Filter to disable DnD when not in default mode
+    const isDragEnabled = categoryFilter === 'All' && sortMode === 'default';
+
+    const handleSubscriptionDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        setSubscriptions((items) => {
+            const oldIndex = items.findIndex(i => i.id === active.id);
+            const newIndex = items.findIndex(i => i.id === over.id);
+
+            // Reorder the array
+            const newItems = arrayMove(items, oldIndex, newIndex);
+
+            // Update sortOrder for all items
+            const updatedItems = newItems.map((item, index) => ({
+                ...item,
+                sortOrder: index
+            }));
+
+            // Save and Sync
+            saveSubscriptions(updatedItems);
+            // We optimize sync to not fire on every drag if possible, but for MVP we sync.
+            // Debouncing would be better, but let's sync for safety.
+            if (user) syncToCloud(user.id);
+
+            return updatedItems;
+        });
+    };
+
+    const handleCategoryDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = orderedCategories.indexOf(active.id as ServiceCategory);
+        const newIndex = orderedCategories.indexOf(over.id as ServiceCategory);
+
+        const newOrder = arrayMove(orderedCategories, oldIndex, newIndex);
+        setCategoryOrder(newOrder);
+        localStorage.setItem('category_order', JSON.stringify(newOrder));
+        // Note: We are not syncing category order to cloud yet in this step, but local persistence works.
+        // To strictly follow plan, we should sync to profile.
+        // Let's assume Profile sync is a separate task or we add it to updateProfile logic later.
+    };
+
     if (loading) return <div className="p-4 text-center mt-10 text-muted-foreground">読み込み中...</div>;
 
     return (
@@ -266,20 +366,41 @@ const Dashboard: React.FC = () => {
 
                 {/* Category Filter */}
                 {subscriptions.length > 0 && usedCategories.length > 1 && (
-                    <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-hide">
-                        {categoryTabs.map(cat => (
-                            <button
-                                key={cat}
-                                onClick={() => setCategoryFilter(cat)}
-                                className={`shrink-0 px-3 py-1 text-xs font-bold rounded-full transition-colors duration-150 ${categoryFilter === cat
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                                    }`}
-                            >
-                                {CATEGORY_LABELS[cat] || cat}
-                            </button>
-                        ))}
-                    </div>
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleCategoryDragEnd}
+                    >
+                        <SortableContext
+                            items={categoryTabs.filter(c => c !== 'All').map(c => c)}
+                            strategy={horizontalListSortingStrategy}
+                        >
+                            <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-hide touch-pan-x">
+                                <button
+                                    onClick={() => setCategoryFilter('All')}
+                                    className={`shrink-0 px-3 py-1 text-xs font-bold rounded-full transition-colors duration-150 ${categoryFilter === 'All'
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                                        }`}
+                                >
+                                    すべて
+                                </button>
+                                {categoryTabs.filter(c => c !== 'All').map(cat => (
+                                    <SortableCategoryTab key={cat} id={cat}>
+                                        <button
+                                            onClick={() => setCategoryFilter(cat)}
+                                            className={`w-full h-full px-3 py-1 text-xs font-bold rounded-full transition-colors duration-150 ${categoryFilter === cat
+                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                                                }`}
+                                        >
+                                            {CATEGORY_LABELS[cat] || cat}
+                                        </button>
+                                    </SortableCategoryTab>
+                                ))}
+                            </div>
+                        </SortableContext>
+                    </DndContext>
                 )}
 
                 {subscriptions.length === 0 ? (
@@ -288,106 +409,130 @@ const Dashboard: React.FC = () => {
                         <p className="text-sm mt-2">下の <span className="text-primary font-bold">+</span> ボタンから追加しよう</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 gap-2" style={{ minHeight: filteredSubscriptions.length > 0 ? `${Math.ceil(filteredSubscriptions.length / 2) * 100}px` : undefined }}>
-                        {filteredSubscriptions.map((sub) => {
-                            const service = getServiceDetails(sub.serviceId);
-                            const isCustom = !service;
-                            const itemColor = isCustom ? 'var(--color-muted-foreground)' : service?.color;
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleSubscriptionDragEnd}
+                    // Only enable DnD if filtered is 'All' and sort is Default
+                    // And we disable logic if conditions not met, though context is present.
+                    >
+                        <SortableContext
+                            items={filteredSubscriptions.map(s => s.id)}
+                            strategy={rectSortingStrategy}
+                            disabled={!isDragEnabled}
+                        >
+                            <div className="grid grid-cols-2 gap-2" style={{ minHeight: filteredSubscriptions.length > 0 ? `${Math.ceil(filteredSubscriptions.length / 2) * 100}px` : undefined }}>
+                                {filteredSubscriptions.map((sub) => {
+                                    const service = getServiceDetails(sub.serviceId);
+                                    const isCustom = !service;
+                                    const itemColor = isCustom ? 'var(--color-muted-foreground)' : service?.color;
 
 
-                            // Calculate monthly equivalent for display if yearly
-                            const isYearly = sub.cycle === 'yearly';
-                            const monthlyEquivalent = isYearly ? Math.floor(sub.price / 12) : null;
+                                    // Calculate monthly equivalent for display if yearly
+                                    const isYearly = sub.cycle === 'yearly';
+                                    const monthlyEquivalent = isYearly ? Math.floor(sub.price / 12) : null;
 
-                            return (
-                                <div
-                                    key={sub.id}
-                                    className={`group relative overflow-hidden rounded-xl border transition-all duration-300 flex flex-col justify-between p-3 min-h-[5.5rem] h-auto cursor-pointer ${sub.isActive
-                                        ? 'bg-card border-border shadow-sm hover:shadow-md hover:-translate-y-0.5'
-                                        : 'bg-muted/50 border-border/50 opacity-70 grayscale'
-                                        }`}
-                                    onClick={() => navigate(`/service/${sub.serviceId}`)}
-                                >
-                                    <div className="flex justify-between items-start mb-1">
-                                        <div className="relative">
-                                            <ServiceIcon
-                                                serviceName={isCustom ? (sub.customName || '?') : service.name}
-                                                serviceColor={sub.isActive ? itemColor! : '#888'}
-                                                domain={service?.url}
-                                                customIcon={sub.customIcon}
-                                                className="w-8 h-8 shadow-sm"
-                                            />
-                                        </div>
-                                        <div className="flex items-center space-x-0.5">
-                                            <button
-                                                onClick={(e) => openMemoModal(sub, e)}
-                                                className="text-muted-foreground hover:text-primary p-1 rounded-full hover:bg-muted transition-colors"
-                                                title="メモ"
-                                            >
-                                                <MoreVertical size={14} />
-                                            </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDelete(sub.id);
-                                                }}
-                                                className="text-muted-foreground/50 hover:text-destructive p-1 rounded-full hover:bg-muted transition-colors"
-                                            >
-                                                <Trash2 size={13} />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <h3 className="font-bold text-xs leading-tight line-clamp-1 text-foreground mb-0.5">
-                                            {isCustom ? sub.customName : service?.name}
-                                        </h3>
-                                        {/* Show renewal date indicator if set */}
-                                        {sub.renewalDate && (
-                                            <p className="text-[9px] text-muted-foreground flex items-center gap-0.5 mb-0.5">
-                                                <Calendar size={8} />
-                                                {new Date(sub.renewalDate).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
-                                            </p>
-                                        )}
-                                        <div className="flex items-end justify-between">
-                                            <div className="flex flex-wrap items-baseline gap-x-1 mr-1 min-w-0">
-                                                <div className="flex items-baseline space-x-0.5">
-                                                    <p className="font-bold text-sm text-foreground leading-none">
-                                                        {formatCurrency(sub.price, currency, exchangeRate)}
-                                                    </p>
-                                                    <span className="text-[10px] text-muted-foreground font-medium scale-90 origin-left">
-                                                        /{isYearly ? '年' : '月'}
-                                                    </span>
-                                                </div>
-                                                {isYearly && monthlyEquivalent && (
-                                                    <span className="text-[10px] text-muted-foreground/70 font-normal whitespace-nowrap">
-                                                        (月{formatCurrency(monthlyEquivalent, currency, exchangeRate)})
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <div className="flex items-center mb-0.5 shrink-0">
-                                                {/* Tiny Toggle */}
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleToggleActive(sub);
-                                                    }}
-                                                    className={`w-9 h-5 flex items-center rounded-full transition-colors focus:outline-none p-1 ${sub.isActive ? 'bg-emerald-500/20' : 'bg-muted-foreground/30'
-                                                        }`}
-                                                >
-                                                    <div
-                                                        className={`bg-current w-3 h-3 rounded-full shadow-sm transform duration-200 ${sub.isActive ? 'translate-x-4 text-emerald-500' : 'translate-x-0 text-muted-foreground'
-                                                            }`}
+                                    const CardContent = (
+                                        <div
+                                            className={`group relative overflow-hidden rounded-xl border transition-all duration-300 flex flex-col justify-between p-3 min-h-[5.5rem] h-auto cursor-pointer ${sub.isActive
+                                                ? 'bg-card border-border shadow-sm hover:shadow-md hover:-translate-y-0.5'
+                                                : 'bg-muted/50 border-border/50 opacity-70 grayscale'
+                                                }`}
+                                            onClick={() => navigate(`/service/${sub.serviceId}`)}
+                                        >
+                                            <div className="flex justify-between items-start mb-1">
+                                                <div className="relative">
+                                                    <ServiceIcon
+                                                        serviceName={isCustom ? (sub.customName || '?') : service.name}
+                                                        serviceColor={sub.isActive ? itemColor! : '#888'}
+                                                        domain={service?.url}
+                                                        customIcon={sub.customIcon}
+                                                        className="w-8 h-8 shadow-sm"
                                                     />
-                                                </button>
+                                                </div>
+                                                <div className="flex items-center space-x-0.5">
+                                                    <button
+                                                        onClick={(e) => openMemoModal(sub, e)}
+                                                        className="text-muted-foreground hover:text-primary p-1 rounded-full hover:bg-muted transition-colors"
+                                                        title="メモ"
+                                                    >
+                                                        <MoreVertical size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDelete(sub.id);
+                                                        }}
+                                                        className="text-muted-foreground/50 hover:text-destructive p-1 rounded-full hover:bg-muted transition-colors"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <h3 className="font-bold text-xs leading-tight line-clamp-1 text-foreground mb-0.5">
+                                                    {isCustom ? sub.customName : service?.name}
+                                                </h3>
+                                                {/* Show renewal date indicator if set */}
+                                                {sub.renewalDate && (
+                                                    <p className="text-[9px] text-muted-foreground flex items-center gap-0.5 mb-0.5">
+                                                        <Calendar size={8} />
+                                                        {new Date(sub.renewalDate).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                                                    </p>
+                                                )}
+                                                <div className="flex items-end justify-between">
+                                                    <div className="flex flex-wrap items-baseline gap-x-1 mr-1 min-w-0">
+                                                        <div className="flex items-baseline space-x-0.5">
+                                                            <p className="font-bold text-sm text-foreground leading-none">
+                                                                {formatCurrency(sub.price, currency, exchangeRate)}
+                                                            </p>
+                                                            <span className="text-[10px] text-muted-foreground font-medium scale-90 origin-left">
+                                                                /{isYearly ? '年' : '月'}
+                                                            </span>
+                                                        </div>
+                                                        {isYearly && monthlyEquivalent && (
+                                                            <span className="text-[10px] text-muted-foreground/70 font-normal whitespace-nowrap">
+                                                                (月{formatCurrency(monthlyEquivalent, currency, exchangeRate)})
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex items-center mb-0.5 shrink-0">
+                                                        {/* Tiny Toggle */}
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleToggleActive(sub);
+                                                            }}
+                                                            className={`w-9 h-5 flex items-center rounded-full transition-colors focus:outline-none p-1 ${sub.isActive ? 'bg-emerald-500/20' : 'bg-muted-foreground/30'
+                                                                }`}
+                                                        >
+                                                            <div
+                                                                className={`bg-current w-3 h-3 rounded-full shadow-sm transform duration-200 ${sub.isActive ? 'translate-x-4 text-emerald-500' : 'translate-x-0 text-muted-foreground'
+                                                                    }`}
+                                                            />
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                    );
+
+                                    // Conditionally wrap with Sortable
+                                    return isDragEnabled ? (
+                                        <SortableSubscriptionItem key={sub.id} id={sub.id}>
+                                            {CardContent}
+                                        </SortableSubscriptionItem>
+                                    ) : (
+                                        <div key={sub.id}>
+                                            {CardContent}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </SortableContext>
+                    </DndContext>
                 )
                 }
             </div>

@@ -33,6 +33,7 @@ export interface UserSubscription {
     isActive: boolean; // For simulation toggling
     renewalDate?: string; // User-set renewal date
     memo?: string; // User-set personal memo
+    sortOrder?: number; // Manual sort order
 }
 
 export interface Servicelibrary {

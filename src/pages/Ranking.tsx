@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { POPULAR_SERVICES } from '../data/services';
 import ServiceIcon from '../components/ServiceIcon';
+
 import StarRating from '../components/StarRating';
-import BannerAd from '../components/BannerAd';
 import type { Service } from '../types';
 import { loadSubscriptions } from '../utils/storage';
 import { supabase } from '../lib/supabase';
@@ -188,7 +188,7 @@ const Ranking: React.FC = () => {
             <header className="pt-2 pb-6 text-center">
                 <h1 className="text-2xl font-bold text-foreground">みんなのランキング</h1>
                 <p className="text-xs text-muted-foreground mt-1">リアルタイム更新中</p>
-                <BannerAd className="mt-4" />
+
             </header>
 
             {/* Tabs */}
