@@ -4,7 +4,8 @@ import type { UserSubscription, ServiceCategory } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
 import { calculateTotal, formatCurrency } from '../utils/calculations';
 import { POPULAR_SERVICES } from '../data/services';
-import { Trash2, Star, MoreVertical, X, Calendar, FileText } from 'lucide-react';
+import { Trash2, MoreVertical, X, Calendar, FileText } from 'lucide-react';
+import BannerAd from '../components/BannerAd';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { loadFromCloud, syncToCloud } from '../utils/sync';
@@ -302,10 +303,11 @@ const Dashboard: React.FC = () => {
                             return (
                                 <div
                                     key={sub.id}
-                                    className={`group relative overflow-hidden rounded-xl border transition-all duration-300 flex flex-col justify-between p-3 min-h-[5.5rem] h-auto ${sub.isActive
+                                    className={`group relative overflow-hidden rounded-xl border transition-all duration-300 flex flex-col justify-between p-3 min-h-[5.5rem] h-auto cursor-pointer ${sub.isActive
                                         ? 'bg-card border-border shadow-sm hover:shadow-md hover:-translate-y-0.5'
                                         : 'bg-muted/50 border-border/50 opacity-70 grayscale'
                                         }`}
+                                    onClick={() => navigate(`/service/${sub.serviceId}`)}
                                 >
                                     <div className="flex justify-between items-start mb-1">
                                         <div className="relative">
@@ -318,33 +320,22 @@ const Dashboard: React.FC = () => {
                                             />
                                         </div>
                                         <div className="flex items-center space-x-0.5">
-                                            <div className="flex items-center space-x-0.5">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigate(`/service/${sub.serviceId}`);
-                                                    }}
-                                                    className="text-muted-foreground hover:text-yellow-400 p-1 rounded-full hover:bg-muted transition-colors mr-1"
-                                                >
-                                                    <Star size={14} />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => openMemoModal(sub, e)}
-                                                    className="text-muted-foreground hover:text-primary p-1 rounded-full hover:bg-muted transition-colors"
-                                                    title="メモ"
-                                                >
-                                                    <MoreVertical size={14} />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(sub.id);
-                                                    }}
-                                                    className="text-muted-foreground/50 hover:text-destructive p-1 rounded-full hover:bg-muted transition-colors"
-                                                >
-                                                    <Trash2 size={13} />
-                                                </button>
-                                            </div>
+                                            <button
+                                                onClick={(e) => openMemoModal(sub, e)}
+                                                className="text-muted-foreground hover:text-primary p-1 rounded-full hover:bg-muted transition-colors"
+                                                title="メモ"
+                                            >
+                                                <MoreVertical size={14} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDelete(sub.id);
+                                                }}
+                                                className="text-muted-foreground/50 hover:text-destructive p-1 rounded-full hover:bg-muted transition-colors"
+                                            >
+                                                <Trash2 size={13} />
+                                            </button>
                                         </div>
                                     </div>
 
@@ -375,8 +366,6 @@ const Dashboard: React.FC = () => {
                                                     </span>
                                                 )}
                                             </div>
-
-
 
                                             <div className="flex items-center mb-0.5 shrink-0">
                                                 {/* Tiny Toggle */}
@@ -422,6 +411,8 @@ const Dashboard: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            <BannerAd className="mt-12 mb-8" />
 
             {/* Memo Edit Modal */}
             {editingSub && (

@@ -124,9 +124,9 @@ const Search: React.FC = () => {
             }
 
             navigate('/');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Save failed:', error);
-            alert('保存に失敗しました。');
+            alert(`保存に失敗しました: ${error.message || JSON.stringify(error)}`);
         } finally {
             setIsSaving(false);
         }
@@ -157,9 +157,9 @@ const Search: React.FC = () => {
             }
 
             navigate('/');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Save failed:', error);
-            alert('保存に失敗しました。');
+            alert(`保存に失敗しました: ${error.message || JSON.stringify(error)}`);
         } finally {
             setIsSaving(false);
         }

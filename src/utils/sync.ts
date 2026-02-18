@@ -4,15 +4,13 @@ import { POPULAR_SERVICES } from '../data/services';
 import type { UserSubscription } from '../types';
 
 export const syncToCloud = async (userId: string) => {
-    console.log('[Sync] Starting syncToCloud for user:', userId);
     const localSubs = loadSubscriptions();
-    console.log('[Sync] Local subscriptions to sync:', localSubs);
 
     if (localSubs.length === 0) {
         // If local is empty, we should clear cloud too
         // But we should be careful not to wipe cloud if local is just "fresh"
-        // Assuming "local empty" means "user deleted everything" if they have logged in before.
-        // For safety, let's just delete everything.
+        // However, if the user explicitly deleted everything locally, we should reflect that.
+        // For now, if local is empty, we wipe cloud for this user.
         const { error } = await supabase.from('user_subscriptions').delete().eq('user_id', userId);
         if (error) throw error;
         return;
@@ -48,7 +46,6 @@ export const syncToCloud = async (userId: string) => {
         throw upsertError;
     }
 
-    /* 
     // 3. Delete items that are in Cloud but NOT in Local
     // Verify what's in Cloud now
     const { data: cloudData, error: fetchError } = await supabase
@@ -58,12 +55,9 @@ export const syncToCloud = async (userId: string) => {
 
     if (fetchError) {
         console.error('Error fetching for cleanup:', fetchError);
-        // Don't throw here, upsert succeeded so main data is safe.
         return;
     }
-    */
 
-    /* SAFEMODE: Disable deletion for debugging
     if (cloudData) {
         const localIds = new Set(localSubs.map(s => s.id));
         const idsToDelete = cloudData
@@ -75,11 +69,10 @@ export const syncToCloud = async (userId: string) => {
                 .from('user_subscriptions')
                 .delete()
                 .in('id', idsToDelete);
-            
+
             if (deleteError) console.error('Error cleaning up old subs:', deleteError);
         }
     }
-    */
 
     return true;
 };

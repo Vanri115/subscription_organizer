@@ -2,13 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { POPULAR_SERVICES } from '../data/services';
 import ServiceIcon from '../components/ServiceIcon';
 import StarRating from '../components/StarRating';
+import BannerAd from '../components/BannerAd';
 import type { Service } from '../types';
 import { loadSubscriptions } from '../utils/storage';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+
 type TabType = 'favorite' | 'wasteful' | 'star';
+import type { ServiceCategory } from '../types';
+
+const CATEGORIES: { id: ServiceCategory | 'All', label: string }[] = [
+    { id: 'All', label: 'すべて' },
+    { id: 'Video', label: '動画' },
+    { id: 'Music', label: '音楽' },
+    { id: 'Book', label: '書籍' },
+    { id: 'Game', label: 'ゲーム' },
+    { id: 'Gym', label: 'ジム' },
+    { id: 'Travel', label: '旅行' },
+    { id: 'Food', label: 'グルメ' },
+    { id: 'Dev', label: '開発' },
+    { id: 'Business', label: 'ビジネス' },
+    { id: 'AI', label: 'AI' },
+    { id: 'Security', label: '安全' },
+    { id: 'Learning', label: '学習' },
+    { id: 'Software', label: 'IT' },
+    { id: 'Shopping', label: '買い物' },
+    { id: 'Other', label: 'その他' },
+];
 
 interface RankingItem {
     serviceId: string;
@@ -26,6 +48,7 @@ const Ranking: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<TabType>('favorite');
+    const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | 'All'>('All');
 
     // Vote State
     const [userVotes, setUserVotes] = useState<{ favorite: string | null; wasteful: string | null }>({
@@ -165,6 +188,7 @@ const Ranking: React.FC = () => {
             <header className="pt-2 pb-6 text-center">
                 <h1 className="text-2xl font-bold text-foreground">みんなのランキング</h1>
                 <p className="text-xs text-muted-foreground mt-1">リアルタイム更新中</p>
+                <BannerAd className="mt-4" />
             </header>
 
             {/* Tabs */}
@@ -183,6 +207,22 @@ const Ranking: React.FC = () => {
                             }`}
                     >
                         {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex space-x-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
+                {CATEGORIES.map((cat) => (
+                    <button
+                        key={cat.id}
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all ${selectedCategory === cat.id
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'bg-muted border border-border text-muted-foreground hover:bg-muted/80'
+                            }`}
+                    >
+                        {cat.label}
                     </button>
                 ))}
             </div>
@@ -230,58 +270,71 @@ const Ranking: React.FC = () => {
                 ) : (
                     <>
                         {/* Vote Ranking */}
-                        {(activeTab === 'favorite' || activeTab === 'wasteful') && voteRankings[activeTab].map((item, index) => {
-                            const service = getService(item.serviceId);
-                            const rank = index + 1;
-                            const starInfo = starRankings.find(s => s.serviceId === item.serviceId);
-                            return (
-                                <div key={item.serviceId} onClick={() => navigate(`/service/${item.serviceId}`)} className="cursor-pointer flex items-center bg-card border border-border rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow duration-150">
-                                    <div className={`w-8 h-8 flex items-center justify-center font-black italic text-lg mr-3 ${rank <= 3 ? 'text-yellow-500' : 'text-muted-foreground/50'}`}>{rank}</div>
-                                    <ServiceIcon serviceName={service.name} domain={service.url} serviceColor={service.color} className="w-10 h-10 mr-3 shadow-md" />
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="font-bold text-sm truncate">{service.name}</h4>
-                                        {starInfo ? (
-                                            <div className="flex items-center">
-                                                <StarRating rating={starInfo.average} readonly size={12} />
-                                                <span className="text-[10px] text-muted-foreground ml-1">({starInfo.count})</span>
-                                            </div>
-                                        ) : (
-                                            <p className="text-xs text-muted-foreground">{service.category}</p>
-                                        )}
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="block font-bold text-primary">{item.votes}</span>
-                                        <span className="text-[10px] text-muted-foreground">票</span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {/* Star Ranking */}
-                        {activeTab === 'star' && starRankings.map((item, index) => {
-                            const service = getService(item.serviceId);
-                            const rank = index + 1;
-                            return (
-                                <div key={item.serviceId} onClick={() => navigate(`/service/${item.serviceId}`)} className="cursor-pointer flex items-center bg-card border border-border rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow duration-150">
-                                    <div className={`w-8 h-8 flex items-center justify-center font-black italic text-lg mr-3 ${rank <= 3 ? 'text-yellow-500' : 'text-muted-foreground/50'}`}>{rank}</div>
-                                    <ServiceIcon serviceName={service.name} domain={service.url} serviceColor={service.color} className="w-10 h-10 mr-3 shadow-md" />
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="font-bold text-sm truncate">{service.name}</h4>
-                                        <div className="flex items-center">
-                                            <StarRating rating={item.average} readonly size={12} />
-                                            <span className="text-xs text-muted-foreground ml-1">({item.count})</span>
+                        {(activeTab === 'favorite' || activeTab === 'wasteful') && voteRankings[activeTab]
+                            .filter(item => {
+                                if (selectedCategory === 'All') return true;
+                                const service = getService(item.serviceId);
+                                return service.category === selectedCategory;
+                            })
+                            .map((item, index) => {
+                                const service = getService(item.serviceId);
+                                const rank = index + 1;
+                                const starInfo = starRankings.find(s => s.serviceId === item.serviceId);
+                                return (
+                                    <div key={item.serviceId} onClick={() => navigate(`/service/${item.serviceId}`)} className="cursor-pointer flex items-center bg-card border border-border rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow duration-150">
+                                        <div className={`w-8 h-8 flex items-center justify-center font-black italic text-lg mr-3 ${rank <= 3 ? 'text-yellow-500' : 'text-muted-foreground/50'}`}>{rank}</div>
+                                        <ServiceIcon serviceName={service.name} domain={service.url} serviceColor={service.color} className="w-10 h-10 mr-3 shadow-md" />
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-bold text-sm truncate">{service.name}</h4>
+                                            {starInfo ? (
+                                                <div className="flex items-center">
+                                                    <StarRating rating={starInfo.average} readonly size={12} />
+                                                    <span className="text-[10px] text-muted-foreground ml-1">({starInfo.count})</span>
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-muted-foreground">{service.category}</p>
+                                            )}
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="block font-bold text-primary">{item.votes}</span>
+                                            <span className="text-[10px] text-muted-foreground">票</span>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <span className="block font-bold text-yellow-500">{item.average.toFixed(1)}</span>
+                                );
+                            })}
+
+                        {/* Star Ranking */}
+                        {activeTab === 'star' && starRankings
+                            .filter(item => {
+                                if (selectedCategory === 'All') return true;
+                                const service = getService(item.serviceId);
+                                return service.category === selectedCategory;
+                            })
+                            .map((item, index) => {
+                                const service = getService(item.serviceId);
+                                const rank = index + 1;
+                                return (
+                                    <div key={item.serviceId} onClick={() => navigate(`/service/${item.serviceId}`)} className="cursor-pointer flex items-center bg-card border border-border rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow duration-150">
+                                        <div className={`w-8 h-8 flex items-center justify-center font-black italic text-lg mr-3 ${rank <= 3 ? 'text-yellow-500' : 'text-muted-foreground/50'}`}>{rank}</div>
+                                        <ServiceIcon serviceName={service.name} domain={service.url} serviceColor={service.color} className="w-10 h-10 mr-3 shadow-md" />
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-bold text-sm truncate">{service.name}</h4>
+                                            <div className="flex items-center">
+                                                <StarRating rating={item.average} readonly size={12} />
+                                                <span className="text-xs text-muted-foreground ml-1">({item.count})</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="block font-bold text-yellow-500">{item.average.toFixed(1)}</span>
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
 
                     </>
                 )}
             </div>
+            <BannerAd className="mt-8 mb-4" />
         </div>
     );
 };
