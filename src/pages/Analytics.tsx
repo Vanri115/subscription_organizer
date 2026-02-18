@@ -27,41 +27,41 @@ function monthlyFromSub(s: SubForScore): number {
     return s.cycle === 'yearly' ? s.price / 12 : s.price;
 }
 
-// Savings score logic (0–100)
-function calcSavingsScore(
+// Dependency score: higher = more dependent (needs review)
+// 0-20: S rank (very healthy), 21-40: A, 41-60: B, 61-80: C, 81+: D
+function calcDependencyScore(
     activeSubs: SubForScore[],
-    inactiveSubs: SubForScore[],
+    totalMonthly: number,
     duplicateCount: number,
 ): { score: number; rank: 'S' | 'A' | 'B' | 'C' | 'D' } {
-    let score = 100;
+    let score = 0;
 
-    // Penalty: inactive subs (up to -30)
-    const inactiveRatio = inactiveSubs.length / Math.max(activeSubs.length + inactiveSubs.length, 1);
-    score -= Math.round(inactiveRatio * 30);
+    // +5 per active sub (base dependency)
+    score += activeSubs.length * 5;
 
-    // Penalty: duplicate categories (up to -30, -10 per duplicate category)
-    score -= Math.min(duplicateCount * 10, 30);
+    // +15 per duplicate category (redundancy)
+    score += duplicateCount * 15;
 
-    // Penalty: high-cost subs over ¥3000/month (up to -20, -7 per)
+    // +10 per sub over ¥3000/month (high cost dependency)
     const expensive = activeSubs.filter(s => monthlyFromSub(s) > 3000);
-    score -= Math.min(expensive.length * 7, 20);
+    score += expensive.length * 10;
 
-    // Penalty: too many subs (over 8 active, -2 per extra)
-    const excess = Math.max(activeSubs.length - 8, 0);
-    score -= Math.min(excess * 2, 20);
+    // +20 if total monthly > ¥10,000
+    if (totalMonthly > 10000) score += 20;
+    else if (totalMonthly > 5000) score += 10;
 
-    score = Math.max(0, Math.min(100, score));
+    score = Math.min(score, 100);
 
-    const rank = score >= 90 ? 'S' : score >= 75 ? 'A' : score >= 55 ? 'B' : score >= 35 ? 'C' : 'D';
+    const rank = score <= 20 ? 'S' : score <= 40 ? 'A' : score <= 60 ? 'B' : score <= 80 ? 'C' : 'D';
     return { score, rank };
 }
 
 const RANK_CONFIG = {
-    S: { color: 'text-yellow-400', bg: 'bg-yellow-500/20 border-yellow-500/30', label: '完璧！無駄なし' },
-    A: { color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30', label: '優秀！ほぼ最適' },
-    B: { color: 'text-blue-400', bg: 'bg-blue-500/20 border-blue-500/30', label: '良好。少し改善余地あり' },
-    C: { color: 'text-amber-400', bg: 'bg-amber-500/20 border-amber-500/30', label: '要見直し。節約チャンスあり' },
-    D: { color: 'text-rose-400', bg: 'bg-rose-500/20 border-rose-500/30', label: '要改善。大幅節約できます' },
+    S: { color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30', label: '依存度低め。バランス良好！', barColor: '#10b981' },
+    A: { color: 'text-blue-400', bg: 'bg-blue-500/20 border-blue-500/30', label: 'やや依存あり。概ね良好', barColor: '#3b82f6' },
+    B: { color: 'text-amber-400', bg: 'bg-amber-500/20 border-amber-500/30', label: '依存度中程度。見直しを検討', barColor: '#f59e0b' },
+    C: { color: 'text-orange-400', bg: 'bg-orange-500/20 border-orange-500/30', label: '依存度高め。整理がおすすめ', barColor: '#f97316' },
+    D: { color: 'text-rose-400', bg: 'bg-rose-500/20 border-rose-500/30', label: '依存度かなり高い。要見直し', barColor: '#ef4444' },
 };
 
 const Analytics: React.FC = () => {
@@ -112,9 +112,13 @@ const Analytics: React.FC = () => {
         [...subsWithMeta].sort((a, b) => b.monthlyPrice - a.monthlyPrice).slice(0, 3),
         [subsWithMeta]);
 
+    const monthlyTotal = useMemo(() =>
+        activeSubs.reduce((sum, s) => sum + monthlyFromSub(s), 0),
+        [activeSubs]);
+
     const { score, rank } = useMemo(() =>
-        calcSavingsScore(activeSubs, inactiveSubs, duplicateCategories.length),
-        [activeSubs, inactiveSubs, duplicateCategories.length]);
+        calcDependencyScore(activeSubs, monthlyTotal, duplicateCategories.length),
+        [activeSubs, monthlyTotal, duplicateCategories.length]);
 
     // Yearly report
     const availableYears = useMemo(() => getAvailableYears(), []);
@@ -227,20 +231,20 @@ const Analytics: React.FC = () => {
                     {/* Tab: 節約診断 */}
                     {activeTab === 'diagnosis' && (
                         <div className="space-y-4 animate-in fade-in duration-200">
-                            {/* Savings Score */}
+                            {/* Dependency Score */}
                             <section className="bg-card border border-border rounded-2xl p-5">
                                 <h2 className="text-sm font-bold mb-4 flex items-center gap-2">
                                     <Lightbulb size={16} className="text-yellow-500" />
-                                    節約スコア
+                                    サブスク依存度スコア
                                 </h2>
-                                <div className={`flex items-center gap-4 p-4 rounded-xl border ${RANK_CONFIG[rank].bg}`}>
+                                <div className={`flex items-center gap-4 p-4 rounded-xl border ${(RANK_CONFIG as Record<string, typeof RANK_CONFIG.S>)[rank].bg}`}>
                                     <div className="text-center">
-                                        <div className={`text-5xl font-black ${RANK_CONFIG[rank].color}`}>{rank}</div>
+                                        <div className={`text-5xl font-black ${(RANK_CONFIG as Record<string, typeof RANK_CONFIG.S>)[rank].color}`}>{rank}</div>
                                         <div className="text-xs text-muted-foreground mt-1">ランク</div>
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex items-end gap-1 mb-2">
-                                            <span className={`text-3xl font-black ${RANK_CONFIG[rank].color}`}>{score}</span>
+                                            <span className={`text-3xl font-black ${(RANK_CONFIG as Record<string, typeof RANK_CONFIG.S>)[rank].color}`}>{score}</span>
                                             <span className="text-sm text-muted-foreground mb-1">/100</span>
                                         </div>
                                         {/* Score bar */}
@@ -249,38 +253,38 @@ const Analytics: React.FC = () => {
                                                 className="h-full rounded-full transition-all duration-700"
                                                 style={{
                                                     width: `${score}%`,
-                                                    background: score >= 75 ? '#10b981' : score >= 55 ? '#3b82f6' : score >= 35 ? '#f59e0b' : '#ef4444'
+                                                    background: (RANK_CONFIG as Record<string, typeof RANK_CONFIG.S>)[rank].barColor
                                                 }}
                                             />
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-2">{RANK_CONFIG[rank].label}</p>
+                                        <p className="text-xs text-muted-foreground mt-2">{(RANK_CONFIG as Record<string, typeof RANK_CONFIG.S>)[rank].label}</p>
                                     </div>
                                 </div>
 
                                 {/* Score breakdown */}
                                 <div className="mt-4 space-y-2 text-xs">
                                     <div className="flex justify-between py-1.5 border-b border-border">
-                                        <span className="text-muted-foreground">非アクティブ率</span>
-                                        <span className={`font-bold ${inactiveSubs.length > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
-                                            {inactiveSubs.length === 0 ? '✓ なし' : `-${Math.round((inactiveSubs.length / Math.max(subs.length, 1)) * 30)}pt`}
+                                        <span className="text-muted-foreground">登録数</span>
+                                        <span className={`font-bold ${activeSubs.length > 8 ? 'text-orange-500' : 'text-emerald-500'}`}>
+                                            {activeSubs.length}件（+{activeSubs.length * 5}pt）
                                         </span>
                                     </div>
                                     <div className="flex justify-between py-1.5 border-b border-border">
                                         <span className="text-muted-foreground">重複カテゴリ</span>
                                         <span className={`font-bold ${duplicateCategories.length > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                            {duplicateCategories.length === 0 ? '✓ なし' : `-${Math.min(duplicateCategories.length * 10, 30)}pt`}
+                                            {duplicateCategories.length === 0 ? '✓ なし' : `${duplicateCategories.length}個（+${duplicateCategories.length * 15}pt）`}
                                         </span>
                                     </div>
                                     <div className="flex justify-between py-1.5 border-b border-border">
                                         <span className="text-muted-foreground">高額サブスク（¥3000超）</span>
-                                        <span className={`font-bold ${activeSubs.filter(s => toMonthly(s) > 3000).length > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                            {activeSubs.filter(s => toMonthly(s) > 3000).length === 0 ? '✓ なし' : `-${Math.min(activeSubs.filter(s => toMonthly(s) > 3000).length * 7, 20)}pt`}
+                                        <span className={`font-bold ${activeSubs.filter(s => monthlyFromSub(s) > 3000).length > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                            {activeSubs.filter(s => monthlyFromSub(s) > 3000).length === 0 ? '✓ なし' : `${activeSubs.filter(s => monthlyFromSub(s) > 3000).length}件（+${activeSubs.filter(s => monthlyFromSub(s) > 3000).length * 10}pt）`}
                                         </span>
                                     </div>
                                     <div className="flex justify-between py-1.5">
-                                        <span className="text-muted-foreground">登録数（8件超）</span>
-                                        <span className={`font-bold ${activeSubs.length > 8 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                            {activeSubs.length <= 8 ? '✓ 適切' : `-${Math.min((activeSubs.length - 8) * 2, 20)}pt`}
+                                        <span className="text-muted-foreground">月額合計</span>
+                                        <span className={`font-bold ${monthlyTotal > 10000 ? 'text-rose-500' : monthlyTotal > 5000 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                            {monthlyTotal > 10000 ? `¥10,000超（+20pt）` : monthlyTotal > 5000 ? `¥5,000超（+10pt）` : '✓ ¥5,000以内'}
                                         </span>
                                     </div>
                                 </div>

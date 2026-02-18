@@ -33,7 +33,8 @@ const Settings: React.FC = () => {
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
     // Public Profile State
-    const [isPublic, setIsPublic] = useState(false);
+    const [isPublic, setIsPublic] = useState<boolean | null>(null); // null = not yet loaded
+    const [profileLoaded, setProfileLoaded] = useState(false);
     const [syncing, setSyncing] = useState(false);
 
     useEffect(() => {
@@ -55,6 +56,7 @@ const Settings: React.FC = () => {
             if (data.is_public !== undefined) setIsPublic(data.is_public);
             if (data.avatar_url) setAvatarUrl(data.avatar_url);
         }
+        setProfileLoaded(true);
     };
 
     const handleSaveName = async () => {
@@ -206,27 +208,33 @@ const Settings: React.FC = () => {
                 <div className="w-9" />
             </header>
 
-            {/* Profile Quick Link */}
-            {user && isPublic && (
-                <button
-                    onClick={() => navigate(`/user/${user.id}`)}
-                    className="w-full flex items-center justify-between bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-4 hover:from-primary/15 hover:to-primary/10 transition-colors"
-                >
-                    <div className="flex items-center gap-3">
-                        {avatarUrl ? (
-                            <img src={avatarUrl} alt="avatar" className="w-10 h-10 rounded-full object-cover" />
-                        ) : (
-                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                                <User size={20} />
+            {/* Profile Quick Link - skeleton until loaded */}
+            {user && (
+                profileLoaded ? (
+                    isPublic && (
+                        <button
+                            onClick={() => navigate(`/user/${user.id}`)}
+                            className="w-full flex items-center justify-between bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-4 hover:from-primary/15 hover:to-primary/10 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                {avatarUrl ? (
+                                    <img src={avatarUrl} alt="avatar" className="w-10 h-10 rounded-full object-cover" />
+                                ) : (
+                                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                                        <User size={20} />
+                                    </div>
+                                )}
+                                <div className="text-left">
+                                    <p className="font-bold text-sm text-foreground">{displayName || '名無しさん'}</p>
+                                    <p className="text-xs text-primary">マイプロフィールを見る →</p>
+                                </div>
                             </div>
-                        )}
-                        <div className="text-left">
-                            <p className="font-bold text-sm text-foreground">{displayName || '名無しさん'}</p>
-                            <p className="text-xs text-primary">マイプロフィールを見る →</p>
-                        </div>
-                    </div>
-                    <ChevronRight size={16} className="text-primary" />
-                </button>
+                            <ChevronRight size={16} className="text-primary" />
+                        </button>
+                    )
+                ) : (
+                    <div className="w-full h-[72px] bg-muted/30 rounded-2xl animate-pulse" />
+                )
             )}
 
             {/* Account Section */}
