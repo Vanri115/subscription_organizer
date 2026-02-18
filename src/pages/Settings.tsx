@@ -198,6 +198,29 @@ const Settings: React.FC = () => {
                 <h1 className="text-2xl font-bold text-foreground">設定</h1>
             </header>
 
+            {/* Profile Quick Link (logged in + public) */}
+            {user && isPublic && (
+                <button
+                    onClick={() => navigate(`/user/${user.id}`)}
+                    className="w-full flex items-center justify-between bg-primary/10 border border-primary/20 rounded-2xl p-4 hover:bg-primary/15 transition-colors"
+                >
+                    <div className="flex items-center gap-3">
+                        {avatarUrl ? (
+                            <img src={avatarUrl} alt="avatar" className="w-10 h-10 rounded-full object-cover" />
+                        ) : (
+                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                                <User size={20} />
+                            </div>
+                        )}
+                        <div className="text-left">
+                            <p className="font-bold text-sm text-foreground">{displayName || '名無しさん'}</p>
+                            <p className="text-xs text-primary">マイプロフィールを見る →</p>
+                        </div>
+                    </div>
+                    <ChevronRight size={16} className="text-primary" />
+                </button>
+            )}
+
             {/* Account Section */}
             <section className="space-y-3">
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">アカウント</h2>

@@ -4,7 +4,8 @@ import type { UserSubscription, ServiceCategory } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
 import { calculateTotal, formatCurrency } from '../utils/calculations';
 import { POPULAR_SERVICES } from '../data/services';
-import { Trash2, Pencil, X, Calendar, FileText, UserCircle, GripHorizontal } from 'lucide-react';
+import { Trash2, Pencil, X, Calendar, FileText, GripHorizontal } from 'lucide-react';
+import { saveSnapshot } from '../utils/snapshot';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { loadFromCloud, syncToCloud } from '../utils/sync';
@@ -81,7 +82,12 @@ const Dashboard: React.FC = () => {
             setSubscriptions(loadedSubs);
             setLoading(false);
 
-            // 2. Sync from cloud if logged in
+            // 2. Save monthly snapshot (once per month)
+            const categoryMap: Record<string, string> = {};
+            POPULAR_SERVICES.forEach(s => { categoryMap[s.id] = s.category; });
+            saveSnapshot(loadedSubs, categoryMap);
+
+            // 3. Sync from cloud if logged in
             if (user) {
                 try {
                     console.log('[Dashboard] Starting handleSync from cloud...');
@@ -89,6 +95,7 @@ const Dashboard: React.FC = () => {
                     console.log('[Dashboard] loadFromCloud result:', cloudSubs);
                     if (cloudSubs) {
                         setSubscriptions(cloudSubs);
+                        saveSnapshot(cloudSubs, categoryMap);
                     }
                     if (cloudCategoryOrder) {
                         setCategoryOrder(cloudCategoryOrder);
@@ -306,22 +313,11 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="p-4 max-w-md mx-auto space-y-6 pb-24">
-            <header className="pt-2 pb-4 flex items-center justify-between">
-                {user ? (
-                    <button
-                        onClick={() => navigate(`/user/${user.id}`)}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 p-2 rounded-full transition-colors"
-                        title="マイプロフィール"
-                    >
-                        <UserCircle size={22} />
-                    </button>
-                ) : (
-                    <div className="w-9" />
-                )}
+            <header className="pb-2 flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-foreground">
                     マイサブスク
                 </h1>
-                {user ? (
+                {user && (
                     <button
                         onClick={async () => {
                             const url = `${window.location.origin}/user/${user.id}`;
@@ -331,11 +327,7 @@ const Dashboard: React.FC = () => {
                                 url,
                             };
                             if (navigator.share) {
-                                try {
-                                    await navigator.share(shareData);
-                                } catch (e) {
-                                    // User cancelled or error — do nothing
-                                }
+                                try { await navigator.share(shareData); } catch { /* cancelled */ }
                             } else {
                                 await navigator.clipboard.writeText(url);
                                 alert('リンクをコピーしました！');
@@ -348,8 +340,6 @@ const Dashboard: React.FC = () => {
                             <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                         </svg>
                     </button>
-                ) : (
-                    <div className="w-9" />
                 )}
             </header>
 

@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 
-type TabType = 'favorite' | 'wasteful' | 'star';
+type TabType = 'popular' | 'favorite' | 'wasteful' | 'star';
 import type { ServiceCategory } from '../types';
 
 const CATEGORIES: { id: ServiceCategory | 'All', label: string }[] = [
@@ -47,7 +47,7 @@ interface StarRankingItem {
 const Ranking: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<TabType>('favorite');
+    const [activeTab, setActiveTab] = useState<TabType>('popular');
     const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | 'All'>('All');
 
     // Vote State
@@ -58,6 +58,7 @@ const Ranking: React.FC = () => {
     const [myServices, setMyServices] = useState<Service[]>([]);
 
     // Data State
+    const [popularRankings, setPopularRankings] = useState<RankingItem[]>([]);
     const [voteRankings, setVoteRankings] = useState<{ favorite: RankingItem[], wasteful: RankingItem[] }>({
         favorite: [],
         wasteful: []
@@ -106,8 +107,21 @@ const Ranking: React.FC = () => {
 
     const fetchAllData = async () => {
         setLoading(true);
-        await Promise.all([fetchVoteData(), fetchStarData()]);
+        await Promise.all([fetchPopularData(), fetchVoteData(), fetchStarData()]);
         setLoading(false);
+    };
+
+    const fetchPopularData = async () => {
+        const { data } = await supabase.from('subscriptions').select('service_id');
+        if (!data) return;
+        const counts: Record<string, number> = {};
+        data.forEach((row: any) => {
+            if (row.service_id) counts[row.service_id] = (counts[row.service_id] || 0) + 1;
+        });
+        const sorted = Object.entries(counts)
+            .map(([serviceId, votes]) => ({ serviceId, votes }))
+            .sort((a, b) => b.votes - a.votes);
+        setPopularRankings(sorted);
     };
 
     const fetchVoteData = async () => {
@@ -194,6 +208,7 @@ const Ranking: React.FC = () => {
             {/* Tabs */}
             <div className="flex p-1 bg-muted/50 rounded-xl mb-6 overflow-x-auto">
                 {[
+                    { id: 'popular', label: '📊 登録数' },
                     { id: 'favorite', label: '🏆 神サブスク' },
                     { id: 'wasteful', label: '💸 無駄遣い' },
                     { id: 'star', label: '⭐ 高評価' },
@@ -269,6 +284,32 @@ const Ranking: React.FC = () => {
                     <div className="text-center py-8 text-muted-foreground text-sm">読み込み中...</div>
                 ) : (
                     <>
+                        {/* Popular Ranking */}
+                        {activeTab === 'popular' && popularRankings
+                            .filter(item => {
+                                if (selectedCategory === 'All') return true;
+                                const service = getService(item.serviceId);
+                                return service.category === selectedCategory;
+                            })
+                            .map((item, index) => {
+                                const service = getService(item.serviceId);
+                                const rank = index + 1;
+                                return (
+                                    <div key={item.serviceId} onClick={() => navigate(`/service/${item.serviceId}`)} className="cursor-pointer flex items-center bg-card border border-border rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow duration-150">
+                                        <div className={`w-8 h-8 flex items-center justify-center font-black italic text-lg mr-3 ${rank <= 3 ? 'text-yellow-500' : 'text-muted-foreground/50'}`}>{rank}</div>
+                                        <ServiceIcon serviceName={service.name} domain={service.url} serviceColor={service.color} className="w-10 h-10 mr-3 shadow-md" />
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-bold text-sm truncate">{service.name}</h4>
+                                            <p className="text-xs text-muted-foreground">{service.category}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="block font-bold text-primary">{item.votes}</span>
+                                            <span className="text-[10px] text-muted-foreground">人が登録</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+
                         {/* Vote Ranking */}
                         {(activeTab === 'favorite' || activeTab === 'wasteful') && voteRankings[activeTab]
                             .filter(item => {
