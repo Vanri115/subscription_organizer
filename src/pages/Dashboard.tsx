@@ -339,28 +339,46 @@ const Dashboard: React.FC = () => {
             </header>
 
             {/* Compact Summary Bar */}
-            <div ref={summaryRef} className="bg-gradient-to-r from-cyan-500 to-sky-600 rounded-xl shadow-md px-3 py-2 flex items-center justify-between min-h-[42px] mb-6">
-                <div className="flex items-baseline gap-2">
-                    <span className="text-xs font-bold text-cyan-100">月額</span>
-                    <span className="text-xl font-black text-white tracking-tight">
-                        {formatCurrency(monthlyTotal, currency, exchangeRate)}
-                    </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="flex flex-col items-end leading-none">
-                        <span className="text-[9px] text-cyan-100 mb-0.5">年額 {formatCurrency(yearlyTotal, currency, exchangeRate)}</span>
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] text-white/90">
-                                {subscriptions.filter(s => s.isActive).length}件
-                            </span>
+            {/* Summary Card - Cyan gradient */}
+            <div ref={summaryRef} className="relative overflow-hidden rounded-2xl shadow-xl mb-6">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 via-teal-500 to-sky-600" />
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                <div className="relative z-10 p-5">
+                    <div className="flex items-start justify-between mb-3">
+                        <div>
+                            <p className="text-cyan-100 text-xs font-medium mb-1">月額合計</p>
+                            <p className="text-4xl font-black text-white tracking-tight">
+                                {formatCurrency(monthlyTotal, currency, exchangeRate)}
+                            </p>
+                            {currency === 'USD' && <p className="text-[10px] text-cyan-200 mt-0.5">1 USD ≈ {Math.round(1 / (exchangeRate || 0.0066))} JPY</p>}
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
                             {streak > 1 && (
-                                <div className="flex items-center gap-0.5 bg-black/20 px-1.5 py-0.5 rounded-full">
-                                    <Flame size={8} className="text-orange-300" />
-                                    <span className="text-[9px] font-bold text-orange-200">{streak}</span>
+                                <div className="flex items-center gap-1 bg-orange-500/30 backdrop-blur-sm border border-orange-400/30 rounded-full px-2.5 py-1">
+                                    <Flame size={12} className="text-orange-300" />
+                                    <span className="text-xs font-bold text-orange-200">{streak}日連続</span>
+                                </div>
+                            )}
+                            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2 text-right">
+                                <p className="text-[10px] text-cyan-100">年額見込み</p>
+                                <p className="text-lg font-black text-emerald-300">{formatCurrency(yearlyTotal, currency, exchangeRate)}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-3 border-t border-white/20">
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                                <span className="text-xs text-cyan-100">アクティブ <span className="font-bold text-white">{subscriptions.filter(s => s.isActive).length}</span>件</span>
+                            </div>
+                            {subscriptions.filter(s => !s.isActive).length > 0 && (
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-rose-400" />
+                                    <span className="text-xs text-cyan-100">停止中 <span className="font-bold text-white">{subscriptions.filter(s => !s.isActive).length}</span>件</span>
                                 </div>
                             )}
                         </div>
+                        <span className="text-[10px] text-cyan-200">{subscriptions.length}件登録</span>
                     </div>
                 </div>
             </div>
