@@ -7,13 +7,29 @@ export const syncToCloud = async (userId: string) => {
     const localSubs = loadSubscriptions();
 
     if (localSubs.length === 0) {
-        // If local is empty, we should clear cloud too
-        // But we should be careful not to wipe cloud if local is just "fresh"
-        // However, if the user explicitly deleted everything locally, we should reflect that.
-        // For now, if local is empty, we wipe cloud for this user.
+        // SAFETY CHECK: If cloud has data, DO NOT WIPE.
+        // User might have logged in on a fresh device and clicked Sync before loading finished.
+        const { count, error: countError } = await supabase
+            .from('user_subscriptions')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId);
+
+        if (countError) {
+            console.error('Failed to check cloud count:', countError);
+            throw new Error('同期前の確認に失敗しました。');
+        }
+
+        if (count !== null && count > 0) {
+            console.warn('Preventing accidental wipe: Cloud has data but local is empty.');
+            throw new Error('クラウド上にデータが存在しますが、この端末にはありません。データを失わないよう、同期（上書き）は中止されました。ページをリロードしてクラウドからデータを読み込んでください。');
+        }
+
+        // Only wipe if cloud is empty too (or close to it/we confirmed intent)
+        // But since we can't confirm intent easily here, checking count=0 is safest.
+        // If count=0, delete is safe.
         const { error } = await supabase.from('user_subscriptions').delete().eq('user_id', userId);
         if (error) throw error;
-        return;
+        return true;
     }
 
     // 1. Format local data for DB (Include ID for upsert)
