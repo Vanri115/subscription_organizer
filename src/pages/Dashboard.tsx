@@ -181,32 +181,26 @@ const Dashboard: React.FC = () => {
             </header>
 
             {/* Summary Card */}
-            <div ref={summaryRef} className="relative overflow-hidden rounded-2xl p-6 shadow-xl border border-border/50 bg-gradient-to-br from-card to-background">
-                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-primary/10 blur-3xl opacity-50" />
-                <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl opacity-50" />
-
-                <div className="relative z-10 space-y-4">
-                    <div>
-                        <p className="text-muted-foreground text-sm font-medium mb-1">月額合計</p>
-                        <p className="text-4xl font-extrabold text-foreground tracking-tight drop-shadow-sm">
-                            {formatCurrency(monthlyTotal, currency, exchangeRate)}
-                        </p>
-                        {currency === 'USD' && <p className="text-xs text-muted-foreground mt-1">1 USD ≈ {Math.round(1 / (exchangeRate || 0.0066))} JPY</p>}
-                    </div>
-                    <div className="pt-4 border-t border-border/50">
-                        <div className="flex justify-between items-end mb-2">
-                            <div>
-                                <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-1">年額見込み</p>
-                                <p className="text-xl font-semibold text-emerald-500">
-                                    {formatCurrency(yearlyTotal, currency, exchangeRate)}
-                                </p>
-                            </div>
-                            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full border border-border">
-                                契約中: {subscriptions.filter(s => s.isActive).length}
+            {/* Summary Card */}
+            <div ref={summaryRef} className="relative overflow-hidden rounded-2xl p-5 shadow-lg border border-border/50 bg-card">
+                <div className="relative z-10">
+                    <div className="flex items-end justify-between">
+                        <div>
+                            <p className="text-muted-foreground text-xs font-medium mb-1">月額合計</p>
+                            <p className="text-3xl font-extrabold text-foreground tracking-tight">
+                                {formatCurrency(monthlyTotal, currency, exchangeRate)}
+                            </p>
+                            {currency === 'USD' && <p className="text-[10px] text-muted-foreground mt-0.5">1 USD ≈ {Math.round(1 / (exchangeRate || 0.0066))} JPY</p>}
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xs text-muted-foreground mb-0.5">年額見込み</p>
+                            <p className="text-base font-bold text-emerald-500">
+                                {formatCurrency(yearlyTotal, currency, exchangeRate)}
+                            </p>
+                            <span className="text-[10px] text-muted-foreground">
+                                契約中 {subscriptions.filter(s => s.isActive).length}件
                             </span>
                         </div>
-
-                        {/* Savings moved to floating display */}
                     </div>
                 </div>
             </div>
@@ -302,7 +296,6 @@ const Dashboard: React.FC = () => {
                                             />
                                         </div>
                                         <div className="flex items-center space-x-0.5">
-                                            {/* Memo dot indicator */}
                                             <button
                                                 onClick={(e) => openMemoModal(sub, e)}
                                                 className="text-muted-foreground hover:text-primary p-1 rounded-full hover:bg-muted transition-colors"
@@ -312,7 +305,7 @@ const Dashboard: React.FC = () => {
                                             </button>
                                             <button
                                                 onClick={(e) => handleDelete(sub.id, e)}
-                                                className="text-muted-foreground hover:text-destructive p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                                                className="text-muted-foreground/50 hover:text-destructive p-1 rounded-full hover:bg-muted transition-colors"
                                             >
                                                 <Trash2 size={13} />
                                             </button>
@@ -435,12 +428,23 @@ const Dashboard: React.FC = () => {
                                     <Calendar size={14} />
                                     更新日
                                 </label>
-                                <input
-                                    type="date"
-                                    value={renewalDate}
-                                    onChange={(e) => setRenewalDate(e.target.value)}
-                                    className="w-full bg-muted border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                />
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="date"
+                                        value={renewalDate}
+                                        onChange={(e) => setRenewalDate(e.target.value)}
+                                        className="flex-1 min-w-0 bg-muted border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    />
+                                    {renewalDate && (
+                                        <button
+                                            onClick={() => setRenewalDate('')}
+                                            className="shrink-0 p-2 text-muted-foreground hover:text-destructive hover:bg-muted rounded-xl border border-border transition-colors"
+                                            title="日付をクリア"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Memo */}
