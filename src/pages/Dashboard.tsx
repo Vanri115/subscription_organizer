@@ -173,11 +173,10 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="p-4 max-w-md mx-auto space-y-6 pb-24">
-            <header className="pt-2 pb-6 text-center text-foreground">
-                <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-400 inline-block">
+            <header className="pt-2 pb-4 text-center">
+                <h1 className="text-xl font-bold text-foreground">
                     マイサブスク
                 </h1>
-                <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-600 mx-auto mt-2 rounded-full opacity-80"></div>
             </header>
 
             {/* Summary Card */}
@@ -296,19 +295,30 @@ const Dashboard: React.FC = () => {
                                             />
                                         </div>
                                         <div className="flex items-center space-x-0.5">
-                                            <button
-                                                onClick={(e) => openMemoModal(sub, e)}
-                                                className="text-muted-foreground hover:text-primary p-1 rounded-full hover:bg-muted transition-colors"
-                                                title="メモ"
-                                            >
-                                                <MoreVertical size={14} />
-                                            </button>
-                                            <button
-                                                onClick={(e) => handleDelete(sub.id, e)}
-                                                className="text-muted-foreground/50 hover:text-destructive p-1 rounded-full hover:bg-muted transition-colors"
-                                            >
-                                                <Trash2 size={13} />
-                                            </button>
+                                            <div className="flex items-center space-x-0.5">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(`/service/${sub.serviceId}`);
+                                                    }}
+                                                    className="text-muted-foreground hover:text-yellow-400 p-1 rounded-full hover:bg-muted transition-colors mr-1"
+                                                >
+                                                    <Star size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => openMemoModal(sub, e)}
+                                                    className="text-muted-foreground hover:text-primary p-1 rounded-full hover:bg-muted transition-colors"
+                                                    title="メモ"
+                                                >
+                                                    <MoreVertical size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleDelete(sub.id, e)}
+                                                    className="text-muted-foreground/50 hover:text-destructive p-1 rounded-full hover:bg-muted transition-colors"
+                                                >
+                                                    <Trash2 size={13} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -340,15 +350,7 @@ const Dashboard: React.FC = () => {
                                                 )}
                                             </div>
 
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    navigate(`/service/${sub.serviceId}`);
-                                                }}
-                                                className="p-1 mr-2 text-muted-foreground hover:text-yellow-400 hover:bg-muted rounded-full transition-colors"
-                                            >
-                                                <Star size={14} />
-                                            </button>
+
 
                                             <div className="flex items-center mb-0.5 shrink-0">
                                                 {/* Tiny Toggle */}
@@ -369,7 +371,8 @@ const Dashboard: React.FC = () => {
                             );
                         })}
                     </div>
-                )}
+                )
+                }
             </div>
 
             {/* Floating Savings Display */}

@@ -3,10 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { POPULAR_SERVICES } from '../data/services';
 import type { Plan, Service, ServiceCategory } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
-import { Search as SearchIcon, X, Check, ChevronDown, Plus, Info } from 'lucide-react';
+import { Search as SearchIcon, X, Check, ChevronDown, Plus, Info, Camera, ZoomIn, ZoomOut, Upload } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
+import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../utils/calculations';
 import ServiceIcon from '../components/ServiceIcon';
+import { supabase } from '../lib/supabase';
+import Cropper from 'react-easy-crop';
+import type { Area } from 'react-easy-crop';
+import getCroppedImg from '../utils/cropImage';
 
 const CATEGORIES: { id: ServiceCategory | 'All', label: string }[] = [
     { id: 'All', label: 'すべて' },
@@ -30,6 +35,7 @@ const CATEGORIES: { id: ServiceCategory | 'All', label: string }[] = [
 const Search: React.FC = () => {
     const navigate = useNavigate();
     const { currency, exchangeRate } = useSettings();
+    const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | 'All'>('All');
 
@@ -39,6 +45,13 @@ const Search: React.FC = () => {
     const [customPrice, setCustomPrice] = useState('');
     const [customCycle, setCustomCycle] = useState<'monthly' | 'yearly'>('monthly');
     const [customIconUrl, setCustomIconUrl] = useState('');
+
+    // Crop modal state
+    const [cropImage, setCropImage] = useState<string | null>(null);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+    const [uploadingIcon, setUploadingIcon] = useState(false);
 
     // Selection state
     const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -147,10 +160,10 @@ const Search: React.FC = () => {
                     <div
                         key={service.id}
                         className={`bg-card rounded-xl border transition-all duration-200 overflow-hidden ${registeredServiceIds.has(service.id)
-                                ? 'border-border opacity-50 grayscale-[30%]'
-                                : selectedService?.id === service.id
-                                    ? 'border-primary ring-1 ring-primary shadow-lg shadow-primary/10'
-                                    : 'border-border hover:border-gray-400'
+                            ? 'border-border opacity-50 grayscale-[30%]'
+                            : selectedService?.id === service.id
+                                ? 'border-primary ring-1 ring-primary shadow-lg shadow-primary/10'
+                                : 'border-border hover:border-gray-400'
                             }`}
                     >
                         {/* Service Header */}
@@ -256,20 +269,68 @@ const Search: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs text-muted-foreground mb-1">アイコンURL（任意）</label>
-                                <input
-                                    type="url"
-                                    className="w-full bg-muted border border-border rounded-lg p-3 text-foreground focus:outline-none focus:border-primary text-sm"
-                                    value={customIconUrl}
-                                    onChange={(e) => setCustomIconUrl(e.target.value)}
-                                    placeholder="https://example.com/icon.png"
-                                />
-                                {customIconUrl && (
-                                    <div className="mt-2 flex items-center gap-2">
-                                        <img src={customIconUrl} alt="preview" className="w-8 h-8 rounded-full object-cover bg-muted" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                                        <span className="text-[10px] text-muted-foreground">プレビュー</span>
+                                <label className="block text-xs text-muted-foreground mb-1">アイコン (タップして変更)</label>
+                                <div className="flex items-center gap-4">
+                                    <div className="relative group">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            id="custom-icon-upload"
+                                            disabled={!user}
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                const reader = new FileReader();
+                                                reader.onload = () => {
+                                                    setCropImage(reader.result as string);
+                                                    setCrop({ x: 0, y: 0 });
+                                                    setZoom(1);
+                                                };
+                                                reader.readAsDataURL(file);
+                                                e.target.value = '';
+                                            }}
+                                        />
+                                        <label
+                                            htmlFor="custom-icon-upload"
+                                            className={`block w-16 h-16 rounded-2xl overflow-hidden border-2 border-dashed border-border hover:border-primary transition-colors cursor-pointer relative ${!user ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            {customIconUrl ? (
+                                                <img src={customIconUrl} alt="Icon" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-muted">
+                                                    <Camera size={20} className="text-muted-foreground" />
+                                                </div>
+                                            )}
+                                            {user && (
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Upload size={16} className="text-white" />
+                                                </div>
+                                            )}
+                                        </label>
                                     </div>
-                                )}
+                                    <div className="flex-1">
+                                        {!user ? (
+                                            <p className="text-xs text-orange-500">
+                                                画像アップロードにはログインが必要です。
+                                                （URL入力は可能です）
+                                            </p>
+                                        ) : (
+                                            <p className="text-xs text-muted-foreground">
+                                                オリジナルのアイコンを設定できます。
+                                                JPG/PNG形式に対応。
+                                            </p>
+                                        )}
+                                        {/* Fallback URL input */}
+                                        <input
+                                            type="url"
+                                            className="w-full mt-2 bg-muted border border-border rounded-lg p-2 text-xs focus:outline-none focus:border-primary"
+                                            value={customIconUrl}
+                                            onChange={(e) => setCustomIconUrl(e.target.value)}
+                                            placeholder="または画像のURLを直接入力"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <div>
@@ -308,6 +369,82 @@ const Search: React.FC = () => {
                                 className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/25 mt-2"
                             >
                                 定額リストに追加
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Crop Modal */}
+            {cropImage && (
+                <div className="fixed inset-0 z-[60] bg-black/80 flex flex-col">
+                    <div className="relative flex-1">
+                        <Cropper
+                            image={cropImage}
+                            crop={crop}
+                            zoom={zoom}
+                            aspect={1}
+                            cropShape="round"
+                            showGrid={false}
+                            onCropChange={setCrop}
+                            onZoomChange={setZoom}
+                            onCropComplete={(_, areaPixels) => setCroppedAreaPixels(areaPixels)}
+                        />
+                    </div>
+                    <div className="bg-background p-4 space-y-4">
+                        <div className="flex items-center gap-3">
+                            <ZoomOut size={16} className="text-muted-foreground shrink-0" />
+                            <input
+                                type="range"
+                                min={1}
+                                max={3}
+                                step={0.1}
+                                value={zoom}
+                                onChange={(e) => setZoom(Number(e.target.value))}
+                                className="flex-1 accent-primary"
+                            />
+                            <ZoomIn size={16} className="text-muted-foreground shrink-0" />
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setCropImage(null)}
+                                className="flex-1 py-3 rounded-xl bg-muted text-muted-foreground font-bold text-sm"
+                            >
+                                キャンセル
+                            </button>
+                            <button
+                                disabled={uploadingIcon}
+                                onClick={async () => {
+                                    if (!croppedAreaPixels || !user) return;
+                                    setUploadingIcon(true);
+                                    try {
+                                        const blob = await getCroppedImg(cropImage, croppedAreaPixels);
+                                        const fileName = `custom-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+                                        const filePath = `${user.id}/${fileName}`;
+
+                                        const { error: uploadError } = await supabase.storage
+                                            .from('avatars')
+                                            .upload(filePath, blob, { upsert: true, contentType: 'image/jpeg' });
+
+                                        if (uploadError) throw uploadError;
+
+                                        const { data: urlData } = supabase.storage
+                                            .from('avatars')
+                                            .getPublicUrl(filePath);
+
+                                        const publicUrl = urlData.publicUrl;
+                                        setCustomIconUrl(publicUrl);
+                                        setCropImage(null);
+                                    } catch (err) {
+                                        console.error(err);
+                                        alert('アップロードに失敗しました。');
+                                    } finally {
+                                        setUploadingIcon(false);
+                                    }
+                                }}
+                                className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm"
+                            >
+                                {uploadingIcon ? '保存中...' : '保存する'}
                             </button>
                         </div>
                     </div>
