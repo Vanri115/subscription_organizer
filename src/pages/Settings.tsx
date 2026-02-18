@@ -195,18 +195,30 @@ const Settings: React.FC = () => {
     return (
         <div className="p-4 max-w-md mx-auto pb-24 space-y-8">
             <header className="pt-2 mb-6 flex items-center justify-between">
-                <div className="p-2 rounded-full text-primary bg-primary/10">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    title="戻る"
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-                </div>
+                </button>
                 <h1 className="text-2xl font-bold text-foreground">設定</h1>
                 <div className="w-9" />
             </header>
 
-            {/* Profile Quick Link (logged in + public) */}
+            {/* Profile Share Link */}
             {user && isPublic && (
                 <button
-                    onClick={() => navigate(`/user/${user.id}`)}
-                    className="w-full flex items-center justify-between bg-primary/10 border border-primary/20 rounded-2xl p-4 hover:bg-primary/15 transition-colors"
+                    onClick={async () => {
+                        const url = `${window.location.origin}/user/${user.id}`;
+                        if (navigator.share) {
+                            try { await navigator.share({ title: 'マイサブスク', text: `${displayName || '名無しさん'}のサブスクリストを公開中！`, url }); } catch { /* cancelled */ }
+                        } else {
+                            await navigator.clipboard.writeText(url);
+                            alert('プロフィールリンクをコピーしました！');
+                        }
+                    }}
+                    className="w-full flex items-center justify-between bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-4 hover:from-primary/15 hover:to-primary/10 transition-colors"
                 >
                     <div className="flex items-center gap-3">
                         {avatarUrl ? (
@@ -218,10 +230,13 @@ const Settings: React.FC = () => {
                         )}
                         <div className="text-left">
                             <p className="font-bold text-sm text-foreground">{displayName || '名無しさん'}</p>
-                            <p className="text-xs text-primary">マイプロフィールを見る →</p>
+                            <p className="text-xs text-primary">🔗 プロフィールをシェアする</p>
                         </div>
                     </div>
-                    <ChevronRight size={16} className="text-primary" />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                        <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                    </svg>
                 </button>
             )}
 

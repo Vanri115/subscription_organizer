@@ -326,7 +326,6 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="p-4 max-w-md mx-auto space-y-6 pb-24">
-            {/* Header: gear left, title center, share right */}
             <header className="pb-2 flex items-center justify-between">
                 <button
                     onClick={() => navigate('/settings')}
@@ -336,44 +335,21 @@ const Dashboard: React.FC = () => {
                     <Settings size={20} />
                 </button>
                 <h1 className="text-2xl font-bold text-foreground">マイサブスク</h1>
-                {user ? (
-                    <button
-                        onClick={async () => {
-                            const url = `${window.location.origin}/user/${user.id}`;
-                            const shareData = { title: 'マイサブスク', text: '私のサブスクリストを公開しました！ #マイサブスク', url };
-                            if (navigator.share) {
-                                try { await navigator.share(shareData); } catch { /* cancelled */ }
-                            } else {
-                                await navigator.clipboard.writeText(url);
-                                alert('リンクをコピーしました！');
-                            }
-                        }}
-                        className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors"
-                        title="シェア"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                        </svg>
-                    </button>
-                ) : (
-                    <div className="w-9" />
-                )}
+                <div className="w-9" />
             </header>
 
-            {/* Summary Card - Gradient redesign */}
+            {/* Summary Card - Cyan gradient */}
             <div ref={summaryRef} className="relative overflow-hidden rounded-2xl shadow-xl">
-                {/* Gradient background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700" />
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 via-teal-500 to-sky-600" />
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
                 <div className="relative z-10 p-5">
                     <div className="flex items-start justify-between mb-3">
                         <div>
-                            <p className="text-indigo-200 text-xs font-medium mb-1">月額合計</p>
+                            <p className="text-cyan-100 text-xs font-medium mb-1">月額合計</p>
                             <p className="text-4xl font-black text-white tracking-tight">
                                 {formatCurrency(monthlyTotal, currency, exchangeRate)}
                             </p>
-                            {currency === 'USD' && <p className="text-[10px] text-indigo-300 mt-0.5">1 USD ≈ {Math.round(1 / (exchangeRate || 0.0066))} JPY</p>}
+                            {currency === 'USD' && <p className="text-[10px] text-cyan-200 mt-0.5">1 USD ≈ {Math.round(1 / (exchangeRate || 0.0066))} JPY</p>}
                         </div>
                         <div className="flex flex-col items-end gap-2">
                             {streak > 1 && (
@@ -383,7 +359,7 @@ const Dashboard: React.FC = () => {
                                 </div>
                             )}
                             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2 text-right">
-                                <p className="text-[10px] text-indigo-200">年額見込み</p>
+                                <p className="text-[10px] text-cyan-100">年額見込み</p>
                                 <p className="text-lg font-black text-emerald-300">{formatCurrency(yearlyTotal, currency, exchangeRate)}</p>
                             </div>
                         </div>
@@ -392,16 +368,16 @@ const Dashboard: React.FC = () => {
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1.5">
                                 <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                                <span className="text-xs text-indigo-200">アクティブ <span className="font-bold text-white">{subscriptions.filter(s => s.isActive).length}</span>件</span>
+                                <span className="text-xs text-cyan-100">アクティブ <span className="font-bold text-white">{subscriptions.filter(s => s.isActive).length}</span>件</span>
                             </div>
                             {subscriptions.filter(s => !s.isActive).length > 0 && (
                                 <div className="flex items-center gap-1.5">
                                     <div className="w-2 h-2 rounded-full bg-rose-400" />
-                                    <span className="text-xs text-indigo-200">停止中 <span className="font-bold text-white">{subscriptions.filter(s => !s.isActive).length}</span>件</span>
+                                    <span className="text-xs text-cyan-100">停止中 <span className="font-bold text-white">{subscriptions.filter(s => !s.isActive).length}</span>件</span>
                                 </div>
                             )}
                         </div>
-                        <span className="text-[10px] text-indigo-300">{subscriptions.length}件登録</span>
+                        <span className="text-[10px] text-cyan-200">{subscriptions.length}件登録</span>
                     </div>
                 </div>
             </div>
