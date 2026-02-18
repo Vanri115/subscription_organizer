@@ -4,7 +4,7 @@ import type { UserSubscription, ServiceCategory } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
 import { calculateTotal, formatCurrency } from '../utils/calculations';
 import { POPULAR_SERVICES } from '../data/services';
-import { Trash2, MoreVertical, X, Calendar, FileText, UserCircle, GripHorizontal } from 'lucide-react';
+import { Trash2, Pencil, X, Calendar, FileText, UserCircle, GripHorizontal } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { loadFromCloud, syncToCloud } from '../utils/sync';
@@ -505,9 +505,9 @@ const Dashboard: React.FC = () => {
                                                     <button
                                                         onClick={(e) => openMemoModal(sub, e)}
                                                         className="text-muted-foreground hover:text-primary p-1 rounded-full hover:bg-muted transition-colors"
-                                                        title="メモ"
+                                                        title="メモ・更新日を編集"
                                                     >
-                                                        <MoreVertical size={14} />
+                                                        <Pencil size={13} />
                                                     </button>
                                                     <button
                                                         onClick={(e) => {
