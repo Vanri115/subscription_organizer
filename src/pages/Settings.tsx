@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Send, Camera, ZoomIn, ZoomOut, Download, Check } from 'lucide-react';
+import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Send, Camera, ZoomIn, ZoomOut, Download, Check, Palette } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -373,18 +373,21 @@ const Settings: React.FC = () => {
                                 </div>
 
                                 {/* Theme Color Selector */}
-                                <div className="flex items-center justify-between mb-4">
-                                    <p className="text-xs font-bold text-muted-foreground">テーマカラー</p>
+                                <div className="mb-4 pt-1">
                                     <div className="relative">
                                         <button
                                             onClick={() => setShowColorPicker(!showColorPicker)}
-                                            className={`w-8 h-8 rounded-full ${THEME_COLORS.find(c => c.id === themeColor)?.bg || 'bg-indigo-500'} ring-2 ring-offset-2 ring-offset-card ring-primary/50 hover:ring-primary transition-all active:scale-95`}
-                                        />
+                                            className="flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary transition-colors py-2 uppercase tracking-wider"
+                                        >
+                                            <Palette size={14} />
+                                            <span>テーマカラーを選ぶ</span>
+                                            <div className={`w-2.5 h-2.5 rounded-full ${THEME_COLORS.find(c => c.id === themeColor)?.bg || 'bg-indigo-500'} ml-1 ring-1 ring-border`} />
+                                        </button>
 
                                         {showColorPicker && (
                                             <>
                                                 <div className="fixed inset-0 z-40" onClick={() => setShowColorPicker(false)} />
-                                                <div className="absolute right-0 top-10 z-50 bg-popover border border-border rounded-xl p-3 shadow-xl grid grid-cols-5 gap-2 w-48 animate-in zoom-in-95 duration-200 bg-card">
+                                                <div className="absolute left-0 top-10 z-50 bg-popover border border-border rounded-xl p-3 shadow-xl grid grid-cols-5 gap-2 w-48 animate-in zoom-in-95 duration-200 bg-card">
                                                     {THEME_COLORS.map((c) => (
                                                         <button
                                                             key={c.id}
