@@ -28,30 +28,28 @@ function App() {
     <SettingsProvider>
       <AuthProvider>
         <BrowserRouter>
-          <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-            <Routes>
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/auth" element={<Login />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={
-                <OnboardingGuard>
-                  <Layout />
-                </OnboardingGuard>
-              }>
-                <Route index element={<Dashboard />} />
-                <Route path="search" element={<Search />} />
-                <Route path="ranking" element={<Ranking />} />
-                <Route path="service/:id" element={<ServiceDetail />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="settings/reviews" element={<MyReviews />} /> {/* Added MyReviews route */}
-              </Route>
+          <Routes>
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/auth" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={
+              <OnboardingGuard>
+                <Layout />
+              </OnboardingGuard>
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="search" element={<Search />} />
+              <Route path="ranking" element={<Ranking />} />
+              <Route path="service/:id" element={<ServiceDetail />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="settings/reviews" element={<MyReviews />} />
+            </Route>
 
-              {/* Public Routes with Layout but NO Onboarding Guard */}
-              <Route element={<Layout />}>
-                <Route path="user/:id" element={<UserProfile />} /> {/* Added UserProfile route */}
-              </Route>
-            </Routes>
-          </div>
+            {/* Public Routes with Layout but NO Onboarding Guard */}
+            <Route element={<Layout />}>
+              <Route path="user/:id" element={<UserProfile />} />
+            </Route>
+          </Routes>
         </BrowserRouter>
       </AuthProvider>
     </SettingsProvider>
