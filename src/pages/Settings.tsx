@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Mail } from 'lucide-react';
+import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Send } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,7 @@ const Settings: React.FC = () => {
     const [isEditingName, setIsEditingName] = useState(false);
     const [nameError, setNameError] = useState<string | null>(null);
     const [feedbackText, setFeedbackText] = useState('');
+    const [sendingFeedback, setSendingFeedback] = useState(false);
 
     // Public Profile State
     const [isPublic, setIsPublic] = useState(false);
@@ -338,22 +339,44 @@ const Settings: React.FC = () => {
                         placeholder="例: 〇〇機能がほしいです、ここが使いにくいです..."
                         className="w-full bg-muted border border-border rounded-xl p-3 min-h-[80px] text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                     />
-                    <a
-                        href={`mailto:32labo.jp@gmail.com?subject=${encodeURIComponent('【サブスク管理アプリ】ご要望・フィードバック')}&body=${encodeURIComponent(feedbackText)}`}
-                        onClick={() => {
+                    <button
+                        onClick={async () => {
                             if (!feedbackText.trim()) {
                                 alert('メッセージを入力してください。');
                                 return;
                             }
+                            if (!user) {
+                                alert('フィードバックを送信するにはログインが必要です。');
+                                return;
+                            }
+                            setSendingFeedback(true);
+                            try {
+                                const { error } = await supabase.from('feedback').insert({
+                                    user_id: user.id,
+                                    message: feedbackText.trim(),
+                                });
+                                if (error) throw error;
+                                alert('ご意見ありがとうございます！フィードバックを送信しました。');
+                                setFeedbackText('');
+                            } catch (err) {
+                                console.error(err);
+                                alert('送信に失敗しました。時間をおいて再度お試しください。');
+                            } finally {
+                                setSendingFeedback(false);
+                            }
                         }}
-                        className={`w-full flex items-center justify-center space-x-2 py-3 rounded-xl font-bold text-sm transition-all ${feedbackText.trim()
+                        disabled={sendingFeedback || !feedbackText.trim()}
+                        className={`w-full flex items-center justify-center space-x-2 py-3 rounded-xl font-bold text-sm transition-all ${feedbackText.trim() && !sendingFeedback
                                 ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-sm'
                                 : 'bg-muted text-muted-foreground cursor-not-allowed'
                             }`}
                     >
-                        <Mail size={18} />
-                        <span>メールで送信</span>
-                    </a>
+                        <Send size={18} />
+                        <span>{sendingFeedback ? '送信中...' : '送信する'}</span>
+                    </button>
+                    {!user && (
+                        <p className="text-xs text-muted-foreground text-center">※ 送信にはログインが必要です</p>
+                    )}
                 </div>
             </section>
 
