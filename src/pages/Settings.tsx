@@ -10,6 +10,7 @@ import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
 import { loadSubscriptions } from '../utils/storage';
+import { POPULAR_SERVICES } from '../data/services';
 
 const Settings: React.FC = () => {
     const { theme, toggleTheme, currency, setCurrency } = useSettings();
@@ -142,17 +143,29 @@ const Settings: React.FC = () => {
             headers.join(',') +
             '\n' +
             subscriptions
-                .map((sub) =>
-                    headers
+                .map((sub) => {
+                    // Resolve service details
+                    const service = POPULAR_SERVICES.find(s => s.id === sub.serviceId);
+                    const resolvedData = {
+                        ...sub,
+                        name: sub.customName || service?.name || '',
+                        category: service?.category || 'Other',
+                        url: service?.url || ''
+                    };
+
+                    return headers
                         .map((header) => {
-                            const value = sub[header as keyof typeof sub];
+                            let value = resolvedData[header as keyof typeof resolvedData];
+                            if (header === 'firstBillDate') value = sub.startDate; // Map if needed, though header says firstBillDate
+
+                            // Handle comma in string
                             if (typeof value === 'string' && value.includes(',')) {
                                 return `"${value}"`;
                             }
-                            return value;
+                            return value ?? '';
                         })
-                        .join(',')
-                )
+                        .join(',');
+                })
                 .join('\n');
 
         const encodedUri = encodeURI(csvContent);

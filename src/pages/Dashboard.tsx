@@ -248,7 +248,7 @@ const Dashboard: React.FC = () => {
     }, 0);
 
     // Filter to disable DnD when not in default mode
-    const isDragEnabled = categoryFilter === 'All' && sortMode === 'default';
+    const isDragEnabled = sortMode === 'default';
 
     const handleSubscriptionDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;

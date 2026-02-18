@@ -16,7 +16,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [theme, setTheme] = useState<Theme>(() => {
         const saved = localStorage.getItem('theme') as Theme;
-        return saved || 'dark';
+        return saved || 'light';
     });
 
     const [currency, setCurrency] = useState<Currency>(() => {
