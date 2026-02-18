@@ -39,6 +39,12 @@ const Onboarding: React.FC = () => {
             desc: "みんなの「神サブスク」や「無駄だったサブスク」を見て、賢く選びましょう。",
             icon: "🏆",
             color: "bg-amber-500"
+        },
+        {
+            title: "シェア",
+            desc: "あなたのサブスクリストをSNSでシェアしたり、友達と共有しましょう。",
+            icon: "🌍",
+            color: "bg-indigo-500"
         }
     ];
 

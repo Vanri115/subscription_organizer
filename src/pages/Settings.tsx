@@ -137,7 +137,7 @@ const Settings: React.FC = () => {
             return;
         }
 
-        const headers = ['name', 'price', 'cycle', 'firstBillDate', 'category', 'memo', 'url'];
+        const headers = ['name', 'monthlyPrice', 'yearlyPrice', 'category', 'renewalDate', 'memo'];
         const csvContent =
             'data:text/csv;charset=utf-8,' +
             headers.join(',') +
@@ -146,17 +146,30 @@ const Settings: React.FC = () => {
                 .map((sub) => {
                     // Resolve service details
                     const service = POPULAR_SERVICES.find(s => s.id === sub.serviceId);
+
+                    // Calculate prices
+                    let monthlyPrice = 0;
+                    let yearlyPrice = 0;
+                    if (sub.cycle === 'monthly') {
+                        monthlyPrice = sub.price;
+                        yearlyPrice = sub.price * 12;
+                    } else {
+                        monthlyPrice = Math.round(sub.price / 12);
+                        yearlyPrice = sub.price;
+                    }
+
                     const resolvedData = {
-                        ...sub,
                         name: sub.customName || service?.name || '',
+                        monthlyPrice,
+                        yearlyPrice,
                         category: service?.category || 'Other',
-                        url: service?.url || ''
+                        renewalDate: sub.renewalDate || '',
+                        memo: sub.memo || ''
                     };
 
                     return headers
                         .map((header) => {
-                            let value = resolvedData[header as keyof typeof resolvedData];
-                            if (header === 'firstBillDate') value = sub.startDate; // Map if needed, though header says firstBillDate
+                            const value = resolvedData[header as keyof typeof resolvedData];
 
                             // Handle comma in string
                             if (typeof value === 'string' && value.includes(',')) {
