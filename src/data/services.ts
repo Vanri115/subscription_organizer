@@ -292,6 +292,7 @@ export const POPULAR_SERVICES: Service[] = [
         id: 'icloud_plus',
         name: 'iCloud+ (ストレージ)',
         color: '#0070c9',
+        url: 'icloud.com',
         category: 'Software',
         plans: [
             { id: '50gb', name: '50GB', price: 130, currency: 'JPY', cycle: 'monthly' },

@@ -52,16 +52,16 @@ function calcDependencyScore(
 
     score = Math.min(score, 100);
 
-    const rank = score <= 20 ? 'S' : score <= 40 ? 'A' : score <= 60 ? 'B' : score <= 80 ? 'C' : 'D';
+    const rank = score >= 80 ? 'S' : score >= 60 ? 'A' : score >= 40 ? 'B' : score >= 20 ? 'C' : 'D';
     return { score, rank };
 }
 
 const RANK_CONFIG = {
-    S: { color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30', label: '依存度低め。バランス良好！', barColor: '#10b981' },
-    A: { color: 'text-blue-400', bg: 'bg-blue-500/20 border-blue-500/30', label: 'やや依存あり。概ね良好', barColor: '#3b82f6' },
-    B: { color: 'text-amber-400', bg: 'bg-amber-500/20 border-amber-500/30', label: '依存度中程度。見直しを検討', barColor: '#f59e0b' },
-    C: { color: 'text-orange-400', bg: 'bg-orange-500/20 border-orange-500/30', label: '依存度高め。整理がおすすめ', barColor: '#f97316' },
-    D: { color: 'text-rose-400', bg: 'bg-rose-500/20 border-rose-500/30', label: '依存度かなり高い。要見直し', barColor: '#ef4444' },
+    S: { color: 'text-purple-500', bg: 'bg-purple-500/20 border-purple-500/30', label: '依存度 S：サブスクマスター！', barColor: '#a855f7' },
+    A: { color: 'text-indigo-500', bg: 'bg-indigo-500/20 border-indigo-500/30', label: '依存度 A：かなり使いこなしています', barColor: '#6366f1' },
+    B: { color: 'text-blue-500', bg: 'bg-blue-500/20 border-blue-500/30', label: '依存度 B：標準的な利用頻度', barColor: '#3b82f6' },
+    C: { color: 'text-teal-500', bg: 'bg-teal-500/20 border-teal-500/30', label: '依存度 C：控えめな利用', barColor: '#14b8a6' },
+    D: { color: 'text-slate-500', bg: 'bg-slate-500/20 border-slate-500/30', label: '依存度 D：ミニマリスト', barColor: '#64748b' },
 };
 
 const Analytics: React.FC = () => {
