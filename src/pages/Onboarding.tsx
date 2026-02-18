@@ -42,7 +42,7 @@ const Onboarding: React.FC = () => {
         },
         {
             title: "シェア",
-            desc: "あなたのサブスクリストをSNSでシェアしたり、友達と共有しましょう。",
+            desc: "あなたのサブスクリストをSNSでシェアしたり、友達と共有しましょう。\n\n※ シェアするにはログインが必要です。",
             icon: "🌍",
             color: "bg-indigo-500"
         }
@@ -56,7 +56,7 @@ const Onboarding: React.FC = () => {
                         <span className="text-4xl">💎</span>
                     </div>
                     <h1 className="text-3xl font-extrabold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500">
-                        Volatile Photon
+                        マイサブスク
                     </h1>
                     <p className="text-muted-foreground">
                         あなたのサブスクリプションを<br />
@@ -100,7 +100,7 @@ const Onboarding: React.FC = () => {
                     {slides[slideIndex].title}
                 </h2>
 
-                <p className="text-muted-foreground leading-relaxed px-4 min-h-[5rem]">
+                <p className="text-muted-foreground leading-relaxed px-4 min-h-[5rem] whitespace-pre-wrap">
                     {slides[slideIndex].desc}
                 </p>
             </div>

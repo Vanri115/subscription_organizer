@@ -30,6 +30,7 @@ const ServiceIcon: React.FC<ServiceIconProps> = ({ serviceName, serviceColor, do
         <img
             src={iconUrl}
             alt={serviceName}
+            loading="lazy"
             className={`${className} rounded-full object-cover bg-white shrink-0`}
             onError={() => setImageError(true)}
         />

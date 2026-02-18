@@ -4,7 +4,7 @@ import type { UserSubscription, ServiceCategory } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
 import { calculateTotal, formatCurrency } from '../utils/calculations';
 import { POPULAR_SERVICES } from '../data/services';
-import { Trash2, MoreVertical, X, Calendar, FileText } from 'lucide-react';
+import { Trash2, MoreVertical, X, Calendar, FileText, UserCircle } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { loadFromCloud, syncToCloud } from '../utils/sync';
@@ -62,7 +62,7 @@ const Dashboard: React.FC = () => {
     const [editingSub, setEditingSub] = useState<UserSubscription | null>(null);
     const [memoText, setMemoText] = useState('');
     const [renewalDate, setRenewalDate] = useState('');
-    const [showShareModal, setShowShareModal] = useState(false);
+
 
 
     useEffect(() => {
@@ -90,7 +90,7 @@ const Dashboard: React.FC = () => {
             }
         };
         init();
-    }, [user]);
+    }, [user?.id]);
 
     // Sticky card observer
     const summaryRef = useRef<HTMLDivElement>(null);
@@ -297,21 +297,50 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="p-4 max-w-md mx-auto space-y-6 pb-24">
-            <header className="pt-2 pb-4 text-center relative">
+            <header className="pt-2 pb-4 flex items-center justify-between">
+                {user ? (
+                    <button
+                        onClick={() => navigate(`/user/${user.id}`)}
+                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 p-2 rounded-full transition-colors"
+                        title="マイプロフィール"
+                    >
+                        <UserCircle size={22} />
+                    </button>
+                ) : (
+                    <div className="w-9" />
+                )}
                 <h1 className="text-2xl font-bold text-foreground">
                     マイサブスク
                 </h1>
-                {user && (
+                {user ? (
                     <button
-                        onClick={() => setShowShareModal(true)}
-                        className="absolute right-0 top-3 text-primary hover:bg-primary/10 p-2 rounded-full transition-colors"
+                        onClick={async () => {
+                            const url = `${window.location.origin}/user/${user.id}`;
+                            const shareData = {
+                                title: 'マイサブスク',
+                                text: '私のサブスクリストを公開しました！ #マイサブスク',
+                                url,
+                            };
+                            if (navigator.share) {
+                                try {
+                                    await navigator.share(shareData);
+                                } catch (e) {
+                                    // User cancelled or error — do nothing
+                                }
+                            } else {
+                                await navigator.clipboard.writeText(url);
+                                alert('リンクをコピーしました！');
+                            }
+                        }}
+                        className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors"
                         title="シェア"
                     >
-                        <span className="sr-only">シェア</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                         </svg>
                     </button>
+                ) : (
+                    <div className="w-9" />
                 )}
             </header>
 
@@ -654,76 +683,7 @@ const Dashboard: React.FC = () => {
                     </div>
                 </div>
             )}
-            {/* Share Modal */}
-            {showShareModal && user && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowShareModal(false)}>
-                    <div className="bg-card border border-border rounded-2xl w-full max-w-sm shadow-2xl animate-in slide-in-from-bottom-4 duration-300 p-6 space-y-6" onClick={(e) => e.stopPropagation()}>
-                        <div className="text-center">
-                            <h3 className="text-lg font-bold text-foreground">リストをシェア</h3>
-                            <p className="text-sm text-muted-foreground mt-1">あなたのサブスクリストを共有します</p>
-                        </div>
 
-                        <div className="grid grid-cols-3 gap-4">
-                            <button
-                                onClick={() => {
-                                    const url = `${window.location.origin}/user/${user.id}`;
-                                    const text = `私のサブスクリストを公開しました！ #マイサブスク`;
-                                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
-                                    setShowShareModal(false);
-                                }}
-                                className="flex flex-col items-center gap-2 group"
-                            >
-                                <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
-                                </div>
-                                <span className="text-xs font-medium">X (Twitter)</span>
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    const url = `${window.location.origin}/user/${user.id}`;
-                                    const text = `私のサブスクリストを公開しました！ #マイサブスク`;
-                                    window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
-                                    setShowShareModal(false);
-                                }}
-                                className="flex flex-col items-center gap-2 group"
-                            >
-                                <div className="w-12 h-12 bg-[#06C755] text-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7"><path d="M21.157 11.96C21.157 6.476 16.892 2 11.979 2 7.067 2 2.802 6.475 2.802 11.96c0 4.962 3.468 9.11 8.241 9.855.32.068.756.208.866.476.098.243.065.62.032.887-.076.62-1.077 3.518-1.077 3.518-.184.978 1.054.912 1.487.675 0 0 4.967-2.924 6.945-5.326 2.083-2.186 1.86-3.89 1.86-3.89l.001-.06c1.324-1.745 2.062-3.86 2.062-6.136zM11.979 17.47c-4.498 0-8.15-3.328-8.15-7.425s3.652-7.425 8.15-7.425 8.15 3.328 8.15 7.425-3.652 7.425-8.15 7.425z"></path></svg>
-                                </div>
-                                <span className="text-xs font-medium">LINE</span>
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    const url = `${window.location.origin}/user/${user.id}`;
-                                    navigator.clipboard.writeText(url);
-                                    alert('リンクをコピーしました！');
-                                    setShowShareModal(false);
-                                }}
-                                className="flex flex-col items-center gap-2 group"
-                            >
-                                <div className="w-12 h-12 bg-muted text-foreground rounded-full flex items-center justify-center shadow-sm border border-border group-hover:scale-110 transition-transform">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                </div>
-                                <span className="text-xs font-medium">コピー</span>
-                            </button>
-                        </div>
-
-                        <div className="pt-2">
-                            <button
-                                onClick={() => {
-                                    navigate(`/user/${user.id}`);
-                                    setShowShareModal(false);
-                                }}
-                                className="w-full py-3 bg-muted/50 hover:bg-muted text-foreground font-bold rounded-xl transition-colors text-sm"
-                            >
-                                自分のページを確認する
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
