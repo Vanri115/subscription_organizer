@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, Settings, Plus, Trophy } from 'lucide-react';
+import { Home, Settings, Plus, Trophy, BarChart2 } from 'lucide-react';
 
 const Layout: React.FC = () => {
     const location = useLocation();
@@ -42,6 +42,15 @@ const Layout: React.FC = () => {
                     >
                         <Trophy size={24} />
                         <span className="text-[10px] font-medium">ランキング</span>
+                    </Link>
+
+                    <Link
+                        to="/analytics"
+                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/analytics') ? 'text-primary' : 'text-gray-400 hover:text-gray-200'
+                            }`}
+                    >
+                        <BarChart2 size={24} />
+                        <span className="text-[10px] font-medium">分析</span>
                     </Link>
 
                     <Link

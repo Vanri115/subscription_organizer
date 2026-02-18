@@ -8,6 +8,7 @@ import ServiceDetail from './pages/ServiceDetail';
 import Settings from './pages/Settings';
 import MyReviews from './pages/MyReviews';
 import UserProfile from './pages/UserProfile';
+import Analytics from './pages/Analytics';
 import { SettingsProvider } from './contexts/SettingsContext';
 
 import { AuthProvider } from './contexts/AuthContext';
@@ -40,6 +41,7 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="search" element={<Search />} />
               <Route path="ranking" element={<Ranking />} />
+              <Route path="analytics" element={<Analytics />} />
               <Route path="service/:id" element={<ServiceDetail />} />
               <Route path="settings" element={<Settings />} />
               <Route path="settings/reviews" element={<MyReviews />} />
