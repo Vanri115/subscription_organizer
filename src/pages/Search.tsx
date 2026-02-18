@@ -23,6 +23,7 @@ const CATEGORIES: { id: ServiceCategory | 'All', label: string }[] = [
     { id: 'Security', label: 'セキュリティ' },
     { id: 'Learning', label: '学習・教育' },
     { id: 'Software', label: 'IT・ソフト' },
+    { id: 'Shopping', label: 'ショッピング' },
     { id: 'Other', label: 'その他' },
 ];
 

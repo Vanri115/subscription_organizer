@@ -55,7 +55,7 @@ export const POPULAR_SERVICES: Service[] = [
         name: 'Amazon Prime',
         color: '#00A8E1',
         url: 'amazon.co.jp',
-        category: 'Other',
+        category: 'Shopping',
         plans: [
             { id: 'monthly', name: '月間プラン', price: 600, currency: 'JPY', cycle: 'monthly' },
             { id: 'yearly', name: '年間プラン', price: 5900, currency: 'JPY', cycle: 'yearly' },

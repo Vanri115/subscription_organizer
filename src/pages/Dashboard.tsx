@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { UserSubscription } from '../types';
+import type { UserSubscription, ServiceCategory } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
 import { calculateTotal, formatCurrency } from '../utils/calculations';
 import { POPULAR_SERVICES } from '../data/services';
@@ -13,6 +13,7 @@ const Dashboard: React.FC = () => {
     const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
     const [loading, setLoading] = useState(true);
     const [sortMode, setSortMode] = useState<'default' | 'price_desc' | 'price_asc' | 'name_asc'>('default');
+    const [categoryFilter, setCategoryFilter] = useState<ServiceCategory | 'All'>('All');
     const navigate = useNavigate();
 
     // Memo Modal State
@@ -64,6 +65,26 @@ const Dashboard: React.FC = () => {
         // Default: Just creation/index order (stable)
         return 0;
     });
+
+    // Category filter
+    const CATEGORY_LABELS: Record<string, string> = {
+        'All': 'すべて', 'Video': '動画', 'Music': '音楽', 'Book': '書籍', 'Game': 'ゲーム',
+        'Gym': 'ジム', 'Travel': '旅行', 'Food': 'グルメ', 'Dev': '開発', 'Business': 'ビジネス',
+        'AI': 'AI', 'Security': 'セキュリティ', 'Learning': '学習', 'Software': 'IT',
+        'Shopping': '買い物', 'Other': 'その他'
+    };
+    const usedCategories = [...new Set(subscriptions.map(sub => {
+        const service = POPULAR_SERVICES.find(s => s.id === sub.serviceId);
+        return service?.category || 'Other';
+    }))];
+    const categoryTabs: (ServiceCategory | 'All')[] = ['All', ...usedCategories as ServiceCategory[]];
+
+    const filteredSubscriptions = categoryFilter === 'All'
+        ? sortedSubscriptions
+        : sortedSubscriptions.filter(sub => {
+            const service = POPULAR_SERVICES.find(s => s.id === sub.serviceId);
+            return (service?.category || 'Other') === categoryFilter;
+        });
 
     const toggleSort = () => {
         const modes: ('default' | 'price_desc' | 'price_asc' | 'name_asc')[] = ['default', 'price_desc', 'price_asc', 'name_asc'];
@@ -177,7 +198,7 @@ const Dashboard: React.FC = () => {
 
             {/* Subscription List (Ultra Compact) */}
             <div>
-                <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center justify-between mb-2 px-1">
                     <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">登録リスト</h2>
                     <button
                         onClick={toggleSort}
@@ -187,6 +208,24 @@ const Dashboard: React.FC = () => {
                     </button>
                 </div>
 
+                {/* Category Filter */}
+                {subscriptions.length > 0 && usedCategories.length > 1 && (
+                    <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-hide">
+                        {categoryTabs.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setCategoryFilter(cat)}
+                                className={`shrink-0 px-3 py-1 text-xs font-bold rounded-full transition-colors duration-150 ${categoryFilter === cat
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                                    }`}
+                            >
+                                {CATEGORY_LABELS[cat] || cat}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 {subscriptions.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground bg-muted/30 rounded-2xl border border-dashed border-border">
                         <p>まだ登録がありません</p>
@@ -194,7 +233,7 @@ const Dashboard: React.FC = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 gap-2">
-                        {sortedSubscriptions.map((sub) => {
+                        {filteredSubscriptions.map((sub) => {
                             const service = getServiceDetails(sub.serviceId);
                             const isCustom = !service;
                             const itemColor = isCustom ? 'var(--color-muted-foreground)' : service?.color;

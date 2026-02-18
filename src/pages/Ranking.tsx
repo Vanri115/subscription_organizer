@@ -7,9 +7,8 @@ import { loadSubscriptions } from '../utils/storage';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { User, MessageSquare } from 'lucide-react';
 
-type TabType = 'favorite' | 'wasteful' | 'star' | 'reviewer';
+type TabType = 'favorite' | 'wasteful' | 'star';
 
 interface RankingItem {
     serviceId: string;
@@ -22,11 +21,6 @@ interface StarRankingItem {
     count: number;
 }
 
-interface ReviewerRankingItem {
-    userId: string;
-    displayName: string;
-    count: number;
-}
 
 const Ranking: React.FC = () => {
     const { user } = useAuth();
@@ -46,7 +40,6 @@ const Ranking: React.FC = () => {
         wasteful: []
     });
     const [starRankings, setStarRankings] = useState<StarRankingItem[]>([]);
-    const [reviewerRankings, setReviewerRankings] = useState<ReviewerRankingItem[]>([]);
 
     const [loading, setLoading] = useState(true);
 
@@ -79,7 +72,6 @@ const Ranking: React.FC = () => {
         const reviewSub = supabase.channel('ranking_reviews')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, () => {
                 fetchStarData();
-                fetchReviewerData();
             })
             .subscribe();
 
@@ -91,7 +83,7 @@ const Ranking: React.FC = () => {
 
     const fetchAllData = async () => {
         setLoading(true);
-        await Promise.all([fetchVoteData(), fetchStarData(), fetchReviewerData()]);
+        await Promise.all([fetchVoteData(), fetchStarData()]);
         setLoading(false);
     };
 
@@ -142,30 +134,6 @@ const Ranking: React.FC = () => {
         setStarRankings(sorted);
     };
 
-    const fetchReviewerData = async () => {
-        const { data: reviews } = await supabase.from('reviews').select('user_id');
-        const { data: profiles } = await supabase.from('profiles').select('id, display_name');
-
-        if (!reviews) return;
-
-        const userCounts: Record<string, number> = {};
-        reviews.forEach((r: any) => {
-            userCounts[r.user_id] = (userCounts[r.user_id] || 0) + 1;
-        });
-
-        const sorted = Object.entries(userCounts)
-            .map(([uid, count]) => {
-                const profile = profiles?.find((p: any) => p.id === uid);
-                return {
-                    userId: uid,
-                    displayName: profile?.display_name || '名無しさん',
-                    count
-                };
-            })
-            .sort((a, b) => b.count - a.count);
-
-        setReviewerRankings(sorted);
-    };
 
     const handleVote = async (serviceId: string) => {
         if (!user) {
@@ -205,7 +173,6 @@ const Ranking: React.FC = () => {
                     { id: 'favorite', label: '🏆 神サブスク' },
                     { id: 'wasteful', label: '💸 無駄遣い' },
                     { id: 'star', label: '⭐ 高評価' },
-                    { id: 'reviewer', label: '📝 達人' },
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -312,28 +279,6 @@ const Ranking: React.FC = () => {
                             );
                         })}
 
-                        {/* Reviewer Ranking */}
-                        {activeTab === 'reviewer' && reviewerRankings.map((item, index) => {
-                            const rank = index + 1;
-                            return (
-                                <div key={item.userId} className="flex items-center bg-card border border-border rounded-xl p-3 shadow-sm">
-                                    <div className={`w-8 h-8 flex items-center justify-center font-black italic text-lg mr-3 ${rank <= 3 ? 'text-yellow-500' : 'text-muted-foreground/50'}`}>{rank}</div>
-                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3 text-primary">
-                                        <User size={20} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="font-bold text-sm truncate">{item.displayName}</h4>
-                                        <p className="text-xs text-muted-foreground">レビュアー</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="block font-bold text-primary">{item.count}</span>
-                                        <span className="text-[10px] text-muted-foreground pb-1 flex items-center justify-end gap-1">
-                                            <MessageSquare size={10} /> 件
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })}
                     </>
                 )}
             </div>

@@ -1,4 +1,4 @@
-export type ServiceCategory = 'Video' | 'Music' | 'Book' | 'Game' | 'Gym' | 'Salon' | 'Travel' | 'Food' | 'Dev' | 'Business' | 'AI' | 'Security' | 'Learning' | 'Software' | 'School' | 'Other';
+export type ServiceCategory = 'Video' | 'Music' | 'Book' | 'Game' | 'Gym' | 'Salon' | 'Travel' | 'Food' | 'Dev' | 'Business' | 'AI' | 'Security' | 'Learning' | 'Software' | 'School' | 'Shopping' | 'Other';
 
 export type BillingCycle = 'monthly' | 'yearly';
 
