@@ -4,7 +4,7 @@ import type { UserSubscription, ServiceCategory } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
 import { calculateTotal, formatCurrency } from '../utils/calculations';
 import { POPULAR_SERVICES } from '../data/services';
-import { Trash2, MoreVertical, X, Calendar, FileText, UserCircle } from 'lucide-react';
+import { Trash2, MoreVertical, X, Calendar, FileText, UserCircle, GripHorizontal } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { loadFromCloud, syncToCloud } from '../utils/sync';
@@ -581,10 +581,7 @@ const Dashboard: React.FC = () => {
                                                         className="absolute top-0 left-1/2 -translate-x-1/2 z-10 px-3 py-1 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/30 hover:text-muted-foreground/60"
                                                         title="ドラッグして並び替え"
                                                     >
-                                                        <svg width="16" height="6" viewBox="0 0 16 6" fill="currentColor">
-                                                            <circle cx="3" cy="1.5" r="1.2" /><circle cx="8" cy="1.5" r="1.2" /><circle cx="13" cy="1.5" r="1.2" />
-                                                            <circle cx="3" cy="4.5" r="1.2" /><circle cx="8" cy="4.5" r="1.2" /><circle cx="13" cy="4.5" r="1.2" />
-                                                        </svg>
+                                                        <GripHorizontal size={14} />
                                                     </div>
                                                     {CardContent}
                                                 </div>
