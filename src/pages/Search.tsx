@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { POPULAR_SERVICES } from '../data/services';
 import type { Plan, Service, ServiceCategory, UserSubscription } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
-import { Search as SearchIcon, X, Check, ChevronDown, Plus, Info, Camera, ZoomIn, ZoomOut, Upload, ChevronLeft } from 'lucide-react';
+import { Search as SearchIcon, X, Check, ChevronDown, Plus, Info, Camera, ZoomIn, ZoomOut, Upload, Settings } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../utils/calculations';
@@ -169,11 +169,11 @@ const Search: React.FC = () => {
         <div className="p-4 max-w-md mx-auto min-h-screen pb-24 bg-background text-foreground transition-colors duration-300">
             <header className="pb-4 flex items-center justify-between">
                 <button
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/settings')}
                     className="text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-full transition-colors"
-                    title="戻る"
+                    title="設定"
                 >
-                    <ChevronLeft size={20} />
+                    <Settings size={20} />
                 </button>
                 <h1 className="text-2xl font-bold text-foreground">新しいサブスクを追加</h1>
                 <div className="w-9" />
