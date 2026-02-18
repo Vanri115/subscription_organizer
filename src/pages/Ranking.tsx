@@ -303,6 +303,7 @@ const Ranking: React.FC = () => {
                                 );
                             })}
 
+
                         {/* Star Ranking */}
                         {activeTab === 'star' && starRankings
                             .filter(item => {
@@ -330,11 +331,9 @@ const Ranking: React.FC = () => {
                                     </div>
                                 );
                             })}
-
                     </>
                 )}
             </div>
-            <BannerAd className="mt-8 mb-4" />
         </div>
     );
 };

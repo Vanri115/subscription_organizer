@@ -64,7 +64,7 @@ const Onboarding: React.FC = () => {
                         className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-2xl shadow-lg shadow-primary/25 hover:opacity-90 transition-all flex items-center justify-center gap-2"
                     >
                         ログインして始める
-                        <span className="text-xs font-normal opacity-80">(同期・プロフィール公開)</span>
+                        <span className="text-xs font-normal opacity-80">(クラウド同期・プロフィール公開)</span>
                     </button>
 
                     <button

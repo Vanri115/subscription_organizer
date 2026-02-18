@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Send, Camera, ZoomIn, ZoomOut, Download, Upload as UploadIcon } from 'lucide-react';
+import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Send, Camera, ZoomIn, ZoomOut, Download } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +9,7 @@ import { syncToCloud, setPublicProfile } from '../utils/sync';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
-import { parseCSV, saveSubscriptions, loadSubscriptions } from '../utils/storage';
+import { loadSubscriptions } from '../utils/storage';
 
 const Settings: React.FC = () => {
     const { theme, toggleTheme, currency, setCurrency } = useSettings();
@@ -164,39 +164,7 @@ const Settings: React.FC = () => {
         document.body.removeChild(link);
     };
 
-    const handleImportCSV = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const csvText = e.target?.result as string;
-                const newSubs = parseCSV(csvText);
-                if (newSubs.length === 0) {
-                    alert('インポートできるデータが見つかりませんでした。');
-                    return;
-                }
-
-                const currentSubs = loadSubscriptions();
-                const merged = [...currentSubs, ...newSubs];
-                saveSubscriptions(merged);
-
-                // SYNC FIX: Ensure imported data is synced to cloud immediately
-                if (user) {
-                    await syncToCloud(user.id);
-                }
-
-                alert(`${newSubs.length}件のデータをインポートしました。`);
-                window.location.reload();
-            } catch (e) {
-                console.error(e);
-                alert('ファイルの読み込みに失敗しました。フォーマットを確認してください。');
-            }
-        };
-        reader.readAsText(file);
-        event.target.value = ''; // Clear the input so the same file can be selected again
-    };
 
     return (
         <div className="p-4 max-w-md mx-auto pb-24 space-y-8">
@@ -460,35 +428,7 @@ const Settings: React.FC = () => {
                                 <span className="text-xs text-muted-foreground block text-left">現在のデータをCSVファイルとして保存</span>
                             </div>
                         </div>
-                        <ChevronRight size={16} className="text-muted-foreground" />
                     </button>
-
-                    <div className="h-px bg-border mx-4" />
-
-                    <div className="relative w-full">
-                        <input
-                            type="file"
-                            accept=".csv"
-                            onChange={handleImportCSV}
-                            className="hidden"
-                            id="csv-import"
-                        />
-                        <label
-                            htmlFor="csv-import"
-                            className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                        >
-                            <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-blue-500/10 rounded-full text-blue-500">
-                                    <UploadIcon size={20} />
-                                </div>
-                                <div>
-                                    <span className="block font-medium text-foreground text-left">CSVインポート</span>
-                                    <span className="text-xs text-muted-foreground block text-left">CSVファイルからデータを読み込む</span>
-                                </div>
-                            </div>
-                            <ChevronRight size={16} className="text-muted-foreground" />
-                        </label>
-                    </div>
                 </div>
             </section>
 
@@ -533,8 +473,8 @@ const Settings: React.FC = () => {
                         }}
                         disabled={sendingFeedback || !feedbackText.trim()}
                         className={`w-full flex items-center justify-center space-x-2 py-3 rounded-xl font-bold text-sm transition-all ${feedbackText.trim() && !sendingFeedback
-                                ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-sm'
-                                : 'bg-muted text-muted-foreground cursor-not-allowed'
+                            ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-sm'
+                            : 'bg-muted text-muted-foreground cursor-not-allowed'
                             }`}
                     >
                         <Send size={18} />

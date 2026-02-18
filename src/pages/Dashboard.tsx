@@ -5,7 +5,6 @@ import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
 import { calculateTotal, formatCurrency } from '../utils/calculations';
 import { POPULAR_SERVICES } from '../data/services';
 import { Trash2, MoreVertical, X, Calendar, FileText } from 'lucide-react';
-import BannerAd from '../components/BannerAd';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { loadFromCloud, syncToCloud } from '../utils/sync';
@@ -198,7 +197,7 @@ const Dashboard: React.FC = () => {
     return (
         <div className="p-4 max-w-md mx-auto space-y-6 pb-24">
             <header className="pt-2 pb-4 text-center">
-                <h1 className="text-xl font-bold text-foreground">
+                <h1 className="text-2xl font-bold text-foreground">
                     マイサブスク
                 </h1>
             </header>
@@ -412,7 +411,7 @@ const Dashboard: React.FC = () => {
                 </div>
             )}
 
-            <BannerAd className="mt-12 mb-8" />
+
 
             {/* Memo Edit Modal */}
             {editingSub && (
