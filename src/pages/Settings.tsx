@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Send, Camera, ZoomIn, ZoomOut, Download } from 'lucide-react';
+import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Send, Camera, ZoomIn, ZoomOut, Download, Check } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -36,6 +36,7 @@ const Settings: React.FC = () => {
     const [isPublic, setIsPublic] = useState<boolean | null>(null); // null = not yet loaded
     const [profileLoaded, setProfileLoaded] = useState(false);
     const [themeColor, setThemeColor] = useState('indigo');
+    const [showColorPicker, setShowColorPicker] = useState(false);
     const [syncing, setSyncing] = useState(false);
 
     useEffect(() => {
@@ -372,19 +373,34 @@ const Settings: React.FC = () => {
                                 </div>
 
                                 {/* Theme Color Selector */}
-                                <div className="mb-4">
-                                    <p className="text-xs font-bold text-muted-foreground mb-2">テーマカラー</p>
-                                    <div className="flex flex-wrap gap-3">
-                                        {THEME_COLORS.map((c) => (
-                                            <button
-                                                key={c.id}
-                                                onClick={() => handleSaveThemeColor(c.id)}
-                                                className={`w-8 h-8 rounded-full ${c.bg} transition-transform hover:scale-110 flex items-center justify-center ring-2 ring-offset-2 ring-offset-card ${themeColor === c.id ? 'ring-primary scale-110' : 'ring-transparent'}`}
-                                                title={c.id}
-                                            >
-                                                {themeColor === c.id && <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                                            </button>
-                                        ))}
+                                <div className="flex items-center justify-between mb-4">
+                                    <p className="text-xs font-bold text-muted-foreground">テーマカラー</p>
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setShowColorPicker(!showColorPicker)}
+                                            className={`w-8 h-8 rounded-full ${THEME_COLORS.find(c => c.id === themeColor)?.bg || 'bg-indigo-500'} ring-2 ring-offset-2 ring-offset-card ring-primary/50 hover:ring-primary transition-all active:scale-95`}
+                                        />
+
+                                        {showColorPicker && (
+                                            <>
+                                                <div className="fixed inset-0 z-40" onClick={() => setShowColorPicker(false)} />
+                                                <div className="absolute right-0 top-10 z-50 bg-popover border border-border rounded-xl p-3 shadow-xl grid grid-cols-5 gap-2 w-48 animate-in zoom-in-95 duration-200 bg-card">
+                                                    {THEME_COLORS.map((c) => (
+                                                        <button
+                                                            key={c.id}
+                                                            onClick={() => {
+                                                                handleSaveThemeColor(c.id);
+                                                                setShowColorPicker(false);
+                                                            }}
+                                                            className={`w-8 h-8 rounded-full ${c.bg} transition-transform hover:scale-110 flex items-center justify-center ring-2 ring-offset-2 ring-offset-card ${themeColor === c.id ? 'ring-primary scale-110' : 'ring-transparent'}`}
+                                                            title={c.id}
+                                                        >
+                                                            {themeColor === c.id && <Check size={14} className="text-white" />}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
 

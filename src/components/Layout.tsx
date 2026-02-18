@@ -14,7 +14,7 @@ const Layout: React.FC = () => {
             </div>
 
             {/* Bottom Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 border-t border-gray-800 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+            <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-800 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
                 <div className="flex justify-around items-center h-16 max-w-md mx-auto">
                     <Link to="/" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/') ? 'text-primary' : 'text-gray-400 hover:text-gray-200'}`}>
                         <Home size={24} />
