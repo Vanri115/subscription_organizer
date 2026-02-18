@@ -37,4 +37,4 @@ const ServiceIcon: React.FC<ServiceIconProps> = ({ serviceName, serviceColor, do
     );
 };
 
-export default ServiceIcon;
+export default React.memo(ServiceIcon);

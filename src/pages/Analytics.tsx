@@ -205,7 +205,16 @@ const Analytics: React.FC = () => {
                                     <div className="flex items-center gap-4">
                                         <ResponsiveContainer width={140} height={140}>
                                             <PieChart>
-                                                <Pie data={categoryData} cx="50%" cy="50%" innerRadius={35} outerRadius={60} dataKey="value" strokeWidth={0}>
+                                                <Pie
+                                                    data={categoryData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={35}
+                                                    outerRadius={60}
+                                                    dataKey="value"
+                                                    strokeWidth={0}
+                                                    isAnimationActive={false}
+                                                >
                                                     {categoryData.map((entry, i) => (
                                                         <Cell key={i} fill={entry.color} />
                                                     ))}
