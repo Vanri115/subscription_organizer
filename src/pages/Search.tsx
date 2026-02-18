@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { POPULAR_SERVICES } from '../data/services';
 import type { Plan, Service, ServiceCategory } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
-import { Search as SearchIcon, X, Check, ChevronDown, Plus } from 'lucide-react';
+import { Search as SearchIcon, X, Check, ChevronDown, Plus, Info } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { formatCurrency } from '../utils/calculations';
 import ServiceIcon from '../components/ServiceIcon';
@@ -159,10 +159,21 @@ const Search: React.FC = () => {
                                 />
                                 <span className="font-bold text-foreground">{service.name}</span>
                             </div>
-                            <ChevronDown
-                                size={20}
-                                className={`text-muted-foreground transition-transform ${selectedService?.id === service.id ? 'rotate-180' : ''}`}
-                            />
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/service/${service.id}`);
+                                    }}
+                                    className="p-2 text-muted-foreground hover:text-primary hover:bg-muted rounded-full transition-colors"
+                                >
+                                    <Info size={20} />
+                                </button>
+                                <ChevronDown
+                                    size={20}
+                                    className={`text-muted-foreground transition-transform ${selectedService?.id === service.id ? 'rotate-180' : ''}`}
+                                />
+                            </div>
                         </div>
 
                         {/* Plan Selection (Expandable) */}

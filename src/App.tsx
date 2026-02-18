@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Search from './pages/Search';
 import Ranking from './pages/Ranking';
+import ServiceDetail from './pages/ServiceDetail';
 import Settings from './pages/Settings';
 import { SettingsProvider } from './contexts/SettingsContext';
 
@@ -21,6 +22,7 @@ function App() {
                 <Route index element={<Dashboard />} />
                 <Route path="search" element={<Search />} />
                 <Route path="ranking" element={<Ranking />} />
+                <Route path="service/:id" element={<ServiceDetail />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Routes>
