@@ -16,6 +16,7 @@ interface Review {
     created_at: string;
     profiles?: {
         display_name: string;
+        avatar_url?: string;
     };
 }
 
@@ -48,7 +49,7 @@ const ServiceDetail: React.FC = () => {
             .from('reviews')
             .select(`
                 *,
-                profiles (display_name)
+                profiles (display_name, avatar_url)
             `)
             .eq('service_id', service.id)
             .order('created_at', { ascending: false });
@@ -81,15 +82,19 @@ const ServiceDetail: React.FC = () => {
         setSubmitting(true);
 
         try {
-            // 1. Ensure profile (Safe Upsert)
-            // Even if existing, this ensures we have a row to link to
-            await supabase
-                .from('profiles')
-                .upsert({
-                    id: user.id,
-                    display_name: user.email?.split('@')[0] || 'User',
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'id', ignoreDuplicates: true }); // Only create if missing
+            // 1. Ensure profile (Safe Check)
+            // We only insert if the profile doesn't exist to avoid overwriting custom names.
+            const { data: profile } = await supabase.from('profiles').select('id').eq('id', user.id).single();
+
+            if (!profile) {
+                await supabase
+                    .from('profiles')
+                    .upsert({
+                        id: user.id,
+                        display_name: user.email?.split('@')[0] || 'User',
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'id', ignoreDuplicates: true });
+            }
 
             // 2. Upsert Review
             const { error } = await supabase
@@ -212,8 +217,13 @@ const ServiceDetail: React.FC = () => {
                             <div key={review.id} className="bg-card border border-border rounded-xl p-4 shadow-sm">
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex items-center space-x-2">
-                                        <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                                            <UserIcon size={16} className="text-muted-foreground" />
+                                        {/* Avatar Display */}
+                                        <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
+                                            {review.profiles?.avatar_url ? (
+                                                <img src={review.profiles.avatar_url} alt="Av" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <UserIcon size={16} className="text-muted-foreground" />
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-xs font-bold text-foreground">
