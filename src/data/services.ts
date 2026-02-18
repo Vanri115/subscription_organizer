@@ -278,7 +278,7 @@ export const POPULAR_SERVICES: Service[] = [
     // --- Software / Cloud ---
     {
         id: 'google_one',
-        name: 'Google One',
+        name: 'Google One (Google Photos)',
         color: '#DB4437', // Google Red-ish
         category: 'Software',
         plans: [
@@ -290,7 +290,7 @@ export const POPULAR_SERVICES: Service[] = [
     },
     {
         id: 'icloud_plus',
-        name: 'iCloud+',
+        name: 'iCloud+ (ストレージ)',
         color: '#0070c9',
         category: 'Software',
         plans: [
