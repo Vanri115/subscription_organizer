@@ -175,28 +175,29 @@ const Settings: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* My Reviews Link */}
-                            <button
-                                onClick={() => navigate('/settings/reviews')}
-                                className="w-full flex items-center justify-between p-3 mt-4 bg-muted/30 hover:bg-muted/50 rounded-xl transition-colors border border-border/50"
-                            >
-                                <div className="flex items-center space-x-3">
-                                    <div className="p-2 bg-blue-500/10 rounded-full text-blue-500">
-                                        <MessageSquare size={18} />
-                                    </div>
+                            {/* My Reviews Section */}
+                            <div className="mt-4 pt-4 border-t border-border">
+                                <h3 className="text-sm font-bold flex items-center mb-2 px-1 text-muted-foreground uppercase tracking-wider">
+                                    <MessageSquare size={14} className="mr-2" />
+                                    レビュー管理
+                                </h3>
+                                <button
+                                    onClick={() => navigate('/settings/reviews')}
+                                    className="w-full flex items-center justify-between p-3 bg-card border border-border hover:bg-muted/50 rounded-xl transition-colors shadow-sm"
+                                >
                                     <div className="text-left">
-                                        <span className="block font-bold text-sm text-foreground">投稿したレビュー</span>
-                                        <span className="text-xs text-muted-foreground">過去の評価・コメントを確認</span>
+                                        <span className="block font-bold text-sm text-foreground">投稿したレビューを確認</span>
+                                        <span className="text-xs text-muted-foreground">過去の評価・コメントの編集・削除</span>
                                     </div>
-                                </div>
-                                <ChevronRight size={16} className="text-muted-foreground" />
-                            </button>
+                                    <ChevronRight size={16} className="text-muted-foreground" />
+                                </button>
+                            </div>
 
                             {/* Public Profile Section */}
-                            <div className="pt-4 border-t border-border mt-4">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="text-sm font-bold flex items-center">
-                                        <Globe size={16} className="mr-2" />
+                            <div className="mt-4 pt-4 border-t border-border">
+                                <div className="flex items-center justify-between mb-2 px-1">
+                                    <h3 className="text-sm font-bold flex items-center text-muted-foreground uppercase tracking-wider">
+                                        <Globe size={14} className="mr-2" />
                                         公開プロフィール
                                     </h3>
                                     <div
@@ -206,38 +207,44 @@ const Settings: React.FC = () => {
                                         <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ${isPublic ? 'translate-x-4' : ''}`} />
                                     </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground mb-3">
-                                    オンにすると、あなたのサブスクリストが他のユーザーに公開されます。
-                                </p>
 
-                                {isPublic && (
-                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                        <button
-                                            onClick={() => navigate(`/user/${user.id}`)}
-                                            className="w-full flex items-center justify-center space-x-2 bg-primary/10 text-primary py-2 rounded-xl text-sm font-bold hover:bg-primary/20 transition-colors"
-                                        >
-                                            <Eye size={16} />
-                                            <span>自分のページを見る</span>
-                                        </button>
+                                {isPublic ? (
+                                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                        <div className="bg-primary/5 rounded-xl p-3 border border-primary/10">
+                                            <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                                                <span className="font-bold text-primary">公開中</span><br />
+                                                あなたのサブスクリスト全体が公開されています。
+                                            </p>
+                                            <div className="space-y-2">
+                                                <button
+                                                    onClick={() => navigate(`/user/${user.id}`)}
+                                                    className="w-full flex items-center justify-center space-x-2 bg-primary text-primary-foreground py-2 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity shadow-sm"
+                                                >
+                                                    <Eye size={16} />
+                                                    <span>自分のページを見る</span>
+                                                </button>
 
-                                        <button
-                                            onClick={handleManualSync}
-                                            disabled={syncing}
-                                            className="w-full flex items-center justify-center space-x-2 bg-muted hover:bg-muted/80 text-foreground py-2 rounded-xl transition-colors text-sm font-medium"
-                                        >
-                                            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
-                                            <span>{syncing ? '同期中...' : 'クラウドと同期する'}</span>
-                                        </button>
-                                        <p className="text-[10px] text-center text-muted-foreground">
-                                            ※ ローカルのデータをクラウドに上書きします
-                                        </p>
+                                                <button
+                                                    onClick={handleManualSync}
+                                                    disabled={syncing}
+                                                    className="w-full flex items-center justify-center space-x-2 bg-background border border-border hover:bg-muted text-foreground py-2 rounded-lg transition-colors text-sm font-medium"
+                                                >
+                                                    <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+                                                    <span>{syncing ? '同期中...' : 'クラウドと同期する'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground px-1">
+                                        オフにすると、あなたのページは非公開になり、他のユーザーからは見えなくなります。
+                                    </p>
                                 )}
                             </div>
 
                             <button
                                 onClick={handleLogout}
-                                className="w-full flex items-center justify-center space-x-2 bg-muted hover:bg-muted/80 text-foreground py-2 rounded-xl transition-colors text-sm font-medium mt-2"
+                                className="w-full flex items-center justify-center space-x-2 bg-muted hover:bg-muted/80 text-foreground py-2 rounded-xl transition-colors text-sm font-medium mt-6"
                             >
                                 <LogOut size={16} />
                                 <span>ログアウト</span>

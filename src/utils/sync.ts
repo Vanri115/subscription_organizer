@@ -51,8 +51,7 @@ export const syncToCloud = async (userId: string) => {
 export const setPublicProfile = async (userId: string, isPublic: boolean) => {
     const { error } = await supabase
         .from('profiles')
-        .update({ is_public: isPublic })
-        .eq('id', userId);
+        .upsert({ id: userId, is_public: isPublic, updated_at: new Date().toISOString() }, { onConflict: 'id' });
 
     if (error) throw error;
 };
