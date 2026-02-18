@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye } from 'lucide-react';
+import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Mail } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ const Settings: React.FC = () => {
     const [displayName, setDisplayName] = useState('');
     const [isEditingName, setIsEditingName] = useState(false);
     const [nameError, setNameError] = useState<string | null>(null);
+    const [feedbackText, setFeedbackText] = useState('');
 
     // Public Profile State
     const [isPublic, setIsPublic] = useState(false);
@@ -321,6 +322,38 @@ const Settings: React.FC = () => {
                             </button>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            {/* Feedback Section */}
+            <section className="space-y-3">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">ご要望・フィードバック</h2>
+                <div className="bg-card rounded-2xl overflow-hidden border border-border shadow-sm p-4 space-y-3">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                        ほしい機能やご意見など、自由にお書きください！
+                    </p>
+                    <textarea
+                        value={feedbackText}
+                        onChange={(e) => setFeedbackText(e.target.value)}
+                        placeholder="例: 〇〇機能がほしいです、ここが使いにくいです..."
+                        className="w-full bg-muted border border-border rounded-xl p-3 min-h-[80px] text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                    />
+                    <a
+                        href={`mailto:32labo.jp@gmail.com?subject=${encodeURIComponent('【サブスク管理アプリ】ご要望・フィードバック')}&body=${encodeURIComponent(feedbackText)}`}
+                        onClick={() => {
+                            if (!feedbackText.trim()) {
+                                alert('メッセージを入力してください。');
+                                return;
+                            }
+                        }}
+                        className={`w-full flex items-center justify-center space-x-2 py-3 rounded-xl font-bold text-sm transition-all ${feedbackText.trim()
+                                ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-sm'
+                                : 'bg-muted text-muted-foreground cursor-not-allowed'
+                            }`}
+                    >
+                        <Mail size={18} />
+                        <span>メールで送信</span>
+                    </a>
                 </div>
             </section>
 

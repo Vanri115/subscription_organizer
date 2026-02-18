@@ -4,7 +4,7 @@ import type { UserSubscription } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
 import { calculateTotal, formatCurrency } from '../utils/calculations';
 import { POPULAR_SERVICES } from '../data/services';
-import { Trash2, Star } from 'lucide-react';
+import { Trash2, Star, MoreVertical, X, Calendar, FileText } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import ServiceIcon from '../components/ServiceIcon';
 
@@ -14,6 +14,11 @@ const Dashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [sortMode, setSortMode] = useState<'default' | 'price_desc' | 'price_asc' | 'name_asc'>('default');
     const navigate = useNavigate();
+
+    // Memo Modal State
+    const [editingSub, setEditingSub] = useState<UserSubscription | null>(null);
+    const [memoText, setMemoText] = useState('');
+    const [renewalDate, setRenewalDate] = useState('');
 
 
     useEffect(() => {
@@ -91,6 +96,23 @@ const Dashboard: React.FC = () => {
             setSubscriptions(updatedSubs);
             saveSubscriptions(updatedSubs);
         }
+    };
+
+    const openMemoModal = (sub: UserSubscription, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditingSub(sub);
+        setMemoText(sub.memo || '');
+        setRenewalDate(sub.renewalDate || '');
+    };
+
+    const saveMemo = () => {
+        if (!editingSub) return;
+        const updatedSubs = subscriptions.map(sub =>
+            sub.id === editingSub.id ? { ...sub, memo: memoText, renewalDate } : sub
+        );
+        setSubscriptions(updatedSubs);
+        saveSubscriptions(updatedSubs);
+        setEditingSub(null);
     };
 
     const getServiceDetails = (serviceId: string) => {
@@ -199,18 +221,35 @@ const Dashboard: React.FC = () => {
                                                 className="w-8 h-8 shadow-sm"
                                             />
                                         </div>
-                                        <button
-                                            onClick={(e) => handleDelete(sub.id, e)}
-                                            className="text-muted-foreground hover:text-destructive p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
-                                        >
-                                            <Trash2 size={13} />
-                                        </button>
+                                        <div className="flex items-center space-x-0.5">
+                                            {/* Memo dot indicator */}
+                                            <button
+                                                onClick={(e) => openMemoModal(sub, e)}
+                                                className="text-muted-foreground hover:text-primary p-1 rounded-full hover:bg-muted transition-colors"
+                                                title="メモ"
+                                            >
+                                                <MoreVertical size={14} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDelete(sub.id, e)}
+                                                className="text-muted-foreground hover:text-destructive p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                                            >
+                                                <Trash2 size={13} />
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div>
-                                        <h3 className="font-bold text-xs leading-tight line-clamp-1 text-foreground mb-1">
+                                        <h3 className="font-bold text-xs leading-tight line-clamp-1 text-foreground mb-0.5">
                                             {isCustom ? sub.customName : service?.name}
                                         </h3>
+                                        {/* Show renewal date indicator if set */}
+                                        {sub.renewalDate && (
+                                            <p className="text-[9px] text-muted-foreground flex items-center gap-0.5 mb-0.5">
+                                                <Calendar size={8} />
+                                                {new Date(sub.renewalDate).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                                            </p>
+                                        )}
                                         <div className="flex items-end justify-between">
                                             <div className="flex flex-wrap items-baseline gap-x-1 mr-1 min-w-0">
                                                 <div className="flex items-baseline space-x-0.5">
@@ -274,6 +313,79 @@ const Dashboard: React.FC = () => {
                                 {formatCurrency(savedMonthlyTotal, currency, exchangeRate)}
                             </span>
                             <span className="text-[10px] opacity-90 font-medium whitespace-nowrap">/月</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Memo Edit Modal */}
+            {editingSub && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setEditingSub(null)}>
+                    <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl animate-in slide-in-from-bottom-4 duration-300" onClick={(e) => e.stopPropagation()}>
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-border">
+                            <h3 className="font-bold text-foreground flex items-center gap-2">
+                                <FileText size={18} className="text-primary" />
+                                メモ・更新日
+                            </h3>
+                            <button onClick={() => setEditingSub(null)} className="p-1 hover:bg-muted rounded-full transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-4 space-y-4">
+                            {/* Service Name Display */}
+                            <div className="flex items-center space-x-3 bg-muted/30 p-3 rounded-xl">
+                                <ServiceIcon
+                                    serviceName={getServiceDetails(editingSub.serviceId)?.name || editingSub.customName || '?'}
+                                    serviceColor={getServiceDetails(editingSub.serviceId)?.color || '#888'}
+                                    domain={getServiceDetails(editingSub.serviceId)?.url}
+                                    className="w-10 h-10"
+                                />
+                                <div>
+                                    <p className="font-bold text-sm">{getServiceDetails(editingSub.serviceId)?.name || editingSub.customName}</p>
+                                    <p className="text-xs text-muted-foreground">{formatCurrency(editingSub.price, currency, exchangeRate)}/{editingSub.cycle === 'yearly' ? '年' : '月'}</p>
+                                </div>
+                            </div>
+
+                            {/* Renewal Date */}
+                            <div>
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                                    <Calendar size={14} />
+                                    更新日
+                                </label>
+                                <input
+                                    type="date"
+                                    value={renewalDate}
+                                    onChange={(e) => setRenewalDate(e.target.value)}
+                                    className="w-full bg-muted border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                            </div>
+
+                            {/* Memo */}
+                            <div>
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                                    <FileText size={14} />
+                                    メモ
+                                </label>
+                                <textarea
+                                    value={memoText}
+                                    onChange={(e) => setMemoText(e.target.value)}
+                                    placeholder="自由にメモを追加してください..."
+                                    className="w-full bg-muted border border-border rounded-xl p-3 min-h-[100px] text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-4 border-t border-border">
+                            <button
+                                onClick={saveMemo}
+                                className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-opacity"
+                            >
+                                保存する
+                            </button>
                         </div>
                     </div>
                 </div>

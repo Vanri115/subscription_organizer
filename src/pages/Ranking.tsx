@@ -210,7 +210,7 @@ const Ranking: React.FC = () => {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as TabType)}
-                        className={`flex-1 py-2 px-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab.id
+                        className={`flex-1 py-2 px-2 text-xs font-bold rounded-lg transition-colors duration-150 whitespace-nowrap ${activeTab === tab.id
                             ? 'bg-background text-foreground shadow-sm'
                             : 'text-muted-foreground hover:text-foreground/80'
                             }`}
@@ -257,7 +257,7 @@ const Ranking: React.FC = () => {
             )}
 
             {/* Ranking Lists */}
-            <div className="space-y-3">
+            <div key={activeTab} className="space-y-3 animate-in fade-in duration-200">
                 {loading ? (
                     <div className="text-center py-8 text-muted-foreground text-sm">読み込み中...</div>
                 ) : (
@@ -267,7 +267,7 @@ const Ranking: React.FC = () => {
                             const service = getService(item.serviceId);
                             const rank = index + 1;
                             return (
-                                <div key={item.serviceId} onClick={() => navigate(`/service/${item.serviceId}`)} className="cursor-pointer flex items-center bg-card border border-border rounded-xl p-3 shadow-sm hover:shadow-md transition-all">
+                                <div key={item.serviceId} onClick={() => navigate(`/service/${item.serviceId}`)} className="cursor-pointer flex items-center bg-card border border-border rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow duration-150">
                                     <div className={`w-8 h-8 flex items-center justify-center font-black italic text-lg mr-3 ${rank <= 3 ? 'text-yellow-500' : 'text-muted-foreground/50'}`}>{rank}</div>
                                     <ServiceIcon serviceName={service.name} domain={service.url} serviceColor={service.color} className="w-10 h-10 mr-3 shadow-md" />
                                     <div className="flex-1 min-w-0">
@@ -287,7 +287,7 @@ const Ranking: React.FC = () => {
                             const service = getService(item.serviceId);
                             const rank = index + 1;
                             return (
-                                <div key={item.serviceId} onClick={() => navigate(`/service/${item.serviceId}`)} className="cursor-pointer flex items-center bg-card border border-border rounded-xl p-3 shadow-sm hover:shadow-md transition-all">
+                                <div key={item.serviceId} onClick={() => navigate(`/service/${item.serviceId}`)} className="cursor-pointer flex items-center bg-card border border-border rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow duration-150">
                                     <div className={`w-8 h-8 flex items-center justify-center font-black italic text-lg mr-3 ${rank <= 3 ? 'text-yellow-500' : 'text-muted-foreground/50'}`}>{rank}</div>
                                     <ServiceIcon serviceName={service.name} domain={service.url} serviceColor={service.color} className="w-10 h-10 mr-3 shadow-md" />
                                     <div className="flex-1 min-w-0">

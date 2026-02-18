@@ -30,6 +30,8 @@ export interface UserSubscription {
     cycle: BillingCycle;
     startDate?: string;
     isActive: boolean; // For simulation toggling
+    renewalDate?: string; // User-set renewal date
+    memo?: string; // User-set personal memo
 }
 
 export interface Servicelibrary {

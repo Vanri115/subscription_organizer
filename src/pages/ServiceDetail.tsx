@@ -42,27 +42,52 @@ const ServiceDetail: React.FC = () => {
         if (!service) return;
         setLoading(true);
 
-        const { data, error } = await supabase
+        // 1. Fetch reviews (without JOIN to avoid FK issues)
+        const { data: reviewData, error: reviewError } = await supabase
             .from('reviews')
-            .select(`
-                *,
-                profiles (display_name, avatar_url)
-            `)
+            .select('*')
             .eq('service_id', service.id)
             .order('created_at', { ascending: false });
 
-        if (!error && data) {
-            setReviews(data as unknown as Review[]);
+        if (reviewError || !reviewData) {
+            setLoading(false);
+            return;
+        }
 
-            // Check if user has reviewed
-            if (user) {
-                const userReview = data.find((r: any) => r.user_id === user.id);
-                if (userReview) {
-                    setMyReview({ rating: userReview.rating });
-                    setRating(userReview.rating);
-                }
+        // 2. Fetch profiles for all unique user_ids (client-side merge)
+        const userIds = [...new Set(reviewData.map((r: any) => r.user_id))];
+        const profileMap: Record<string, { display_name: string; avatar_url?: string }> = {};
+
+        if (userIds.length > 0) {
+            const { data: profileData } = await supabase
+                .from('profiles')
+                .select('id, display_name, avatar_url')
+                .in('id', userIds);
+
+            if (profileData) {
+                profileData.forEach((p: any) => {
+                    profileMap[p.id] = { display_name: p.display_name, avatar_url: p.avatar_url };
+                });
             }
         }
+
+        // 3. Merge profiles into reviews
+        const mergedReviews: Review[] = reviewData.map((r: any) => ({
+            ...r,
+            profiles: profileMap[r.user_id] || undefined,
+        }));
+
+        setReviews(mergedReviews);
+
+        // Check if user has reviewed
+        if (user) {
+            const userReview = mergedReviews.find((r) => r.user_id === user.id);
+            if (userReview) {
+                setMyReview({ rating: userReview.rating });
+                setRating(userReview.rating);
+            }
+        }
+
         setLoading(false);
     };
 
