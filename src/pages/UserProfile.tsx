@@ -16,6 +16,19 @@ interface PublicSubscription {
     is_active: boolean;
 }
 
+const THEME_CONFIG: Record<string, { from: string; to: string; text: string; bg: string; border: string; lightBg: string }> = {
+    indigo: { from: 'from-indigo-500/20', to: 'to-blue-500/5', text: 'text-indigo-600', bg: 'bg-indigo-500', border: 'border-indigo-200', lightBg: 'bg-indigo-50' },
+    rose: { from: 'from-rose-500/20', to: 'to-pink-500/5', text: 'text-rose-600', bg: 'bg-rose-500', border: 'border-rose-200', lightBg: 'bg-rose-50' },
+    orange: { from: 'from-orange-500/20', to: 'to-amber-500/5', text: 'text-orange-600', bg: 'bg-orange-500', border: 'border-orange-200', lightBg: 'bg-orange-50' },
+    amber: { from: 'from-amber-500/20', to: 'to-yellow-500/5', text: 'text-amber-600', bg: 'bg-amber-500', border: 'border-amber-200', lightBg: 'bg-amber-50' },
+    emerald: { from: 'from-emerald-500/20', to: 'to-teal-500/5', text: 'text-emerald-600', bg: 'bg-emerald-500', border: 'border-emerald-200', lightBg: 'bg-emerald-50' },
+    teal: { from: 'from-teal-500/20', to: 'to-emerald-500/5', text: 'text-teal-600', bg: 'bg-teal-500', border: 'border-teal-200', lightBg: 'bg-teal-50' },
+    cyan: { from: 'from-cyan-500/20', to: 'to-blue-500/5', text: 'text-cyan-600', bg: 'bg-cyan-500', border: 'border-cyan-200', lightBg: 'bg-cyan-50' },
+    blue: { from: 'from-blue-500/20', to: 'to-indigo-500/5', text: 'text-blue-600', bg: 'bg-blue-500', border: 'border-blue-200', lightBg: 'bg-blue-50' },
+    violet: { from: 'from-violet-500/20', to: 'to-fuchsia-500/5', text: 'text-violet-600', bg: 'bg-violet-500', border: 'border-violet-200', lightBg: 'bg-violet-50' },
+    fuchsia: { from: 'from-fuchsia-500/20', to: 'to-pink-500/5', text: 'text-fuchsia-600', bg: 'bg-fuchsia-500', border: 'border-fuchsia-200', lightBg: 'bg-fuchsia-50' },
+};
+
 const UserProfile: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -34,7 +47,7 @@ const UserProfile: React.FC = () => {
         // 1. Fetch Profile
         const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('display_name, is_public, bio, avatar_url')
+            .select('display_name, is_public, bio, avatar_url, theme_color')
             .eq('id', id)
             .single();
 
@@ -109,6 +122,10 @@ const UserProfile: React.FC = () => {
         return acc + amount;
     }, 0);
 
+    const theme = (profile as any).theme_color && THEME_CONFIG[(profile as any).theme_color]
+        ? THEME_CONFIG[(profile as any).theme_color]
+        : THEME_CONFIG['indigo'];
+
     return (
         <div className="min-h-screen bg-background text-foreground pb-24">
             {/* Header */}
@@ -128,16 +145,16 @@ const UserProfile: React.FC = () => {
             <div className="max-w-md mx-auto p-4 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
 
                 {/* Profile Card */}
-                <div className="bg-card border border-border rounded-3xl p-6 shadow-sm text-center relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-primary/20 to-blue-500/5 z-0" />
+                <div className={`bg-card border border-border rounded-3xl p-6 shadow-sm text-center relative overflow-hidden`}>
+                    <div className={`absolute top-0 left-0 w-full h-24 bg-gradient-to-br ${theme.from} ${theme.to} z-0`} />
 
                     <div className="relative z-10 flex flex-col items-center">
                         <div className="w-24 h-24 rounded-full bg-background p-1 shadow-lg mb-3">
-                            <div className="w-full h-full rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                            <div className={`w-full h-full rounded-full ${theme.lightBg} flex items-center justify-center overflow-hidden`}>
                                 {(profile as any).avatar_url ? (
                                     <img src={(profile as any).avatar_url} alt={profile.display_name} className="w-full h-full object-cover" />
                                 ) : (
-                                    <User size={40} className="text-muted-foreground/50" />
+                                    <User size={40} className={theme.text} />
                                 )}
                             </div>
                         </div>
@@ -149,12 +166,12 @@ const UserProfile: React.FC = () => {
                             </p>
                         )}
 
-                        <div className="flex items-center space-x-4 text-xs font-bold text-muted-foreground bg-muted/50 px-4 py-2 rounded-full">
+                        <div className={`flex items-center space-x-4 text-xs font-bold ${theme.text} ${theme.lightBg} px-4 py-2 rounded-full border ${theme.border} border-opacity-50`}>
                             <span className="flex items-center">
                                 <RefreshCw size={12} className="mr-1.5" />
                                 {subscriptions.length} サブスク
                             </span>
-                            <span className="w-px h-3 bg-border" />
+                            <span className={`w-px h-3 ${theme.bg} opacity-20`} />
                             <span>
                                 月額 ¥{totalMonthly.toLocaleString()}
                             </span>
@@ -163,12 +180,12 @@ const UserProfile: React.FC = () => {
                 </div>
 
                 {/* Total Estimate */}
-                <div className="bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-2xl p-4 border border-primary/20 text-center">
-                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">換算月額合計 (推定)</p>
+                <div className={`bg-gradient-to-r ${theme.from} ${theme.to} rounded-2xl p-4 border ${theme.border} text-center`}>
+                    <p className={`text-xs ${theme.text} font-bold uppercase tracking-wider mb-1 opacity-80`}>換算月額合計 (推定)</p>
                     <p className="text-3xl font-black text-foreground">
                         ¥{totalMonthly.toLocaleString()}
                     </p>
-                    <p className="text-[10px] text-muted-foreground mt-1 opacity-70">※年額払いを12ヶ月で割って合算しています</p>
+                    <p className={`text-[10px] ${theme.text} mt-1 opacity-60`}>※年額払いを12ヶ月で割って合算しています</p>
                 </div>
 
                 {/* List: Monthly */}
@@ -256,7 +273,7 @@ const UserProfile: React.FC = () => {
                     onClick={() => navigate('/')}
                     className="flex flex-col items-center space-y-2 group"
                 >
-                    <div className="bg-primary/10 p-4 rounded-full group-hover:bg-primary/20 transition-colors">
+                    <div className={`${theme.lightBg} p-4 rounded-full group-hover:${theme.bg} group-hover:text-white transition-all duration-300 text-3xl`}>
                         <span className="text-3xl">💎</span>
                     </div>
                     <div className="text-center">

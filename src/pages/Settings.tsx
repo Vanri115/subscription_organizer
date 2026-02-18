@@ -35,6 +35,7 @@ const Settings: React.FC = () => {
     // Public Profile State
     const [isPublic, setIsPublic] = useState<boolean | null>(null); // null = not yet loaded
     const [profileLoaded, setProfileLoaded] = useState(false);
+    const [themeColor, setThemeColor] = useState('indigo');
     const [syncing, setSyncing] = useState(false);
 
     useEffect(() => {
@@ -47,7 +48,7 @@ const Settings: React.FC = () => {
         if (!user) return;
         const { data } = await supabase
             .from('profiles')
-            .select('display_name, is_public, avatar_url')
+            .select('display_name, is_public, avatar_url, theme_color')
             .eq('id', user.id)
             .single();
 
@@ -55,6 +56,7 @@ const Settings: React.FC = () => {
             if (data.display_name) setDisplayName(data.display_name);
             if (data.is_public !== undefined) setIsPublic(data.is_public);
             if (data.avatar_url) setAvatarUrl(data.avatar_url);
+            if (data.theme_color) setThemeColor(data.theme_color);
         }
         setProfileLoaded(true);
     };
@@ -101,6 +103,33 @@ const Settings: React.FC = () => {
             setSyncing(false);
         }
     };
+
+    const handleSaveThemeColor = async (color: string) => {
+        if (!user) return;
+        setThemeColor(color); // optimistic update
+        const { error } = await supabase
+            .from('profiles')
+            .update({ theme_color: color, updated_at: new Date().toISOString() })
+            .eq('id', user.id);
+
+        if (error) {
+            console.error(error);
+            alert('テーマカラーの保存に失敗しました');
+        }
+    };
+
+    const THEME_COLORS = [
+        { id: 'indigo', bg: 'bg-indigo-500' },
+        { id: 'rose', bg: 'bg-rose-500' },
+        { id: 'orange', bg: 'bg-orange-500' },
+        { id: 'amber', bg: 'bg-amber-500' },
+        { id: 'emerald', bg: 'bg-emerald-500' },
+        { id: 'teal', bg: 'bg-teal-500' },
+        { id: 'cyan', bg: 'bg-cyan-500' },
+        { id: 'blue', bg: 'bg-blue-500' },
+        { id: 'violet', bg: 'bg-violet-500' },
+        { id: 'fuchsia', bg: 'bg-fuchsia-500' },
+    ];
 
     const handleManualSync = async () => {
         if (!user) return;
@@ -339,6 +368,23 @@ const Settings: React.FC = () => {
                                         className={`w-10 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 ${isPublic ? 'bg-primary' : 'bg-muted'}`}
                                     >
                                         <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ${isPublic ? 'translate-x-4' : ''}`} />
+                                    </div>
+                                </div>
+
+                                {/* Theme Color Selector */}
+                                <div className="mb-4">
+                                    <p className="text-xs font-bold text-muted-foreground mb-2">テーマカラー</p>
+                                    <div className="flex flex-wrap gap-3">
+                                        {THEME_COLORS.map((c) => (
+                                            <button
+                                                key={c.id}
+                                                onClick={() => handleSaveThemeColor(c.id)}
+                                                className={`w-8 h-8 rounded-full ${c.bg} transition-transform hover:scale-110 flex items-center justify-center ring-2 ring-offset-2 ring-offset-card ${themeColor === c.id ? 'ring-primary scale-110' : 'ring-transparent'}`}
+                                                title={c.id}
+                                            >
+                                                {themeColor === c.id && <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 
