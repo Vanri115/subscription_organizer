@@ -40,20 +40,18 @@ const Dashboard: React.FC = () => {
 
     const navigate = useNavigate();
 
-    // Sensors for DnD
-    // TouchSensor handles mobile touch: long-press 500ms = drag, swipe = scroll
-    // PointerSensor handles mouse: also requires 500ms hold to avoid accidental drags
+    // Sensors for DnD — drag handle approach:
+    // Drag only starts when user grabs the handle icon, so no delay needed.
+    // Distance constraint prevents accidental drags on click.
     const sensors = useSensors(
         useSensor(TouchSensor, {
             activationConstraint: {
-                delay: 500,
-                tolerance: 10,
+                distance: 5,
             },
         }),
         useSensor(PointerSensor, {
             activationConstraint: {
-                delay: 500,
-                tolerance: 10,
+                distance: 5,
             },
         }),
         useSensor(KeyboardSensor, {
@@ -573,7 +571,23 @@ const Dashboard: React.FC = () => {
                                     // Conditionally wrap with Sortable
                                     return isDragEnabled ? (
                                         <SortableSubscriptionItem key={sub.id} id={sub.id}>
-                                            {CardContent}
+                                            {(dragHandleProps) => (
+                                                <div className="relative">
+                                                    {/* Drag handle — touch/click here to drag */}
+                                                    <div
+                                                        {...dragHandleProps}
+                                                        className="absolute top-1 left-1 z-10 p-1 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40 hover:text-muted-foreground"
+                                                        title="ドラッグして並び替え"
+                                                    >
+                                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                                                            <circle cx="4" cy="2" r="1.2" /><circle cx="8" cy="2" r="1.2" />
+                                                            <circle cx="4" cy="6" r="1.2" /><circle cx="8" cy="6" r="1.2" />
+                                                            <circle cx="4" cy="10" r="1.2" /><circle cx="8" cy="10" r="1.2" />
+                                                        </svg>
+                                                    </div>
+                                                    {CardContent}
+                                                </div>
+                                            )}
                                         </SortableSubscriptionItem>
                                     ) : (
                                         <div key={sub.id}>
