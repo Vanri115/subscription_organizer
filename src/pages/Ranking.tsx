@@ -199,7 +199,7 @@ const Ranking: React.FC = () => {
     } as Service;
 
     return (
-        <div className="p-4 max-w-md mx-auto min-h-screen pb-24">
+        <div className="p-4 max-w-md mx-auto min-h-screen pb-24 bg-background text-foreground transition-colors duration-300">
             <header className="pb-4 flex items-center justify-between">
                 <button
                     onClick={() => navigate('/settings')}
