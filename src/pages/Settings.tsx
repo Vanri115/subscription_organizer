@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Send } from 'lucide-react';
+import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Send, Camera } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +18,8 @@ const Settings: React.FC = () => {
     const [nameError, setNameError] = useState<string | null>(null);
     const [feedbackText, setFeedbackText] = useState('');
     const [sendingFeedback, setSendingFeedback] = useState(false);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     // Public Profile State
     const [isPublic, setIsPublic] = useState(false);
@@ -33,13 +35,14 @@ const Settings: React.FC = () => {
         if (!user) return;
         const { data } = await supabase
             .from('profiles')
-            .select('display_name, is_public')
+            .select('display_name, is_public, avatar_url')
             .eq('id', user.id)
             .single();
 
         if (data) {
             if (data.display_name) setDisplayName(data.display_name);
             if (data.is_public !== undefined) setIsPublic(data.is_public);
+            if (data.avatar_url) setAvatarUrl(data.avatar_url);
         }
     };
 
@@ -129,8 +132,57 @@ const Settings: React.FC = () => {
                         <div className="p-4 space-y-4">
                             {/* Profile Info */}
                             <div className="flex items-center space-x-3">
-                                <div className="p-3 bg-primary/10 rounded-full text-primary">
-                                    <User size={24} />
+                                <div className="relative">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        id="avatar-upload"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file || !user) return;
+                                            setUploadingAvatar(true);
+                                            try {
+                                                const ext = file.name.split('.').pop();
+                                                const filePath = `${user.id}/avatar.${ext}`;
+                                                const { error: uploadError } = await supabase.storage
+                                                    .from('avatars')
+                                                    .upload(filePath, file, { upsert: true });
+                                                if (uploadError) throw uploadError;
+                                                const { data: urlData } = supabase.storage
+                                                    .from('avatars')
+                                                    .getPublicUrl(filePath);
+                                                const publicUrl = urlData.publicUrl + '?t=' + Date.now();
+                                                await supabase.from('profiles').upsert({
+                                                    id: user.id, avatar_url: publicUrl, updated_at: new Date().toISOString()
+                                                });
+                                                setAvatarUrl(publicUrl);
+                                                alert('アイコンを更新しました！');
+                                            } catch (err) {
+                                                console.error(err);
+                                                alert('アイコンのアップロードに失敗しました。Supabaseの Storage に "avatars" バケットが存在するか確認してください。');
+                                            } finally {
+                                                setUploadingAvatar(false);
+                                            }
+                                        }}
+                                    />
+                                    <label htmlFor="avatar-upload" className="cursor-pointer block">
+                                        {avatarUrl ? (
+                                            <img src={avatarUrl} alt="avatar" className="w-12 h-12 rounded-full object-cover" />
+                                        ) : (
+                                            <div className="p-3 bg-primary/10 rounded-full text-primary">
+                                                <User size={24} />
+                                            </div>
+                                        )}
+                                        <div className="absolute -bottom-0.5 -right-0.5 bg-primary text-primary-foreground rounded-full p-0.5">
+                                            <Camera size={10} />
+                                        </div>
+                                    </label>
+                                    {uploadingAvatar && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full">
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex-1 overflow-hidden">
                                     {isEditingName ? (

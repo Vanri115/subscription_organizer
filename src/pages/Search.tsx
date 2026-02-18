@@ -38,6 +38,7 @@ const Search: React.FC = () => {
     const [customName, setCustomName] = useState('');
     const [customPrice, setCustomPrice] = useState('');
     const [customCycle, setCustomCycle] = useState<'monthly' | 'yearly'>('monthly');
+    const [customIconUrl, setCustomIconUrl] = useState('');
 
     // Selection state
     const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -71,17 +72,20 @@ const Search: React.FC = () => {
         if (!customName || !customPrice) return;
 
         const subs = loadSubscriptions();
-        const newSub = {
+        const newSub: any = {
             id: crypto.randomUUID(),
             serviceId: 'custom',
             planId: 'custom_plan',
             customName,
-            price: Number(customPrice), // Assuming input is in JPY for now as standard
+            price: Number(customPrice),
             currency: 'JPY',
             cycle: customCycle,
             startDate: new Date().toISOString(),
             isActive: true,
         };
+        if (customIconUrl.trim()) {
+            newSub.customIcon = customIconUrl.trim();
+        }
         saveSubscriptions([...subs, newSub]);
         navigate('/');
     };
@@ -235,6 +239,23 @@ const Search: React.FC = () => {
                                     onChange={(e) => setCustomName(e.target.value)}
                                     placeholder="例: 家賃"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs text-muted-foreground mb-1">アイコンURL（任意）</label>
+                                <input
+                                    type="url"
+                                    className="w-full bg-muted border border-border rounded-lg p-3 text-foreground focus:outline-none focus:border-primary text-sm"
+                                    value={customIconUrl}
+                                    onChange={(e) => setCustomIconUrl(e.target.value)}
+                                    placeholder="https://example.com/icon.png"
+                                />
+                                {customIconUrl && (
+                                    <div className="mt-2 flex items-center gap-2">
+                                        <img src={customIconUrl} alt="preview" className="w-8 h-8 rounded-full object-cover bg-muted" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                                        <span className="text-[10px] text-muted-foreground">プレビュー</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div>

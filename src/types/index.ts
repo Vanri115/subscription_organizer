@@ -25,6 +25,7 @@ export interface UserSubscription {
     serviceId: string;
     planId: string;
     customName?: string; // For custom added services
+    customIcon?: string; // User-set icon URL for custom services
     price: number;
     currency: string;
     cycle: BillingCycle;

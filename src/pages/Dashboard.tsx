@@ -216,8 +216,8 @@ const Dashboard: React.FC = () => {
                                 key={cat}
                                 onClick={() => setCategoryFilter(cat)}
                                 className={`shrink-0 px-3 py-1 text-xs font-bold rounded-full transition-colors duration-150 ${categoryFilter === cat
-                                        ? 'bg-primary text-primary-foreground shadow-sm'
-                                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                                     }`}
                             >
                                 {CATEGORY_LABELS[cat] || cat}
@@ -232,7 +232,7 @@ const Dashboard: React.FC = () => {
                         <p className="text-sm mt-2">下の <span className="text-primary font-bold">+</span> ボタンから追加しよう</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2" style={{ minHeight: filteredSubscriptions.length > 0 ? `${Math.ceil(filteredSubscriptions.length / 2) * 100}px` : undefined }}>
                         {filteredSubscriptions.map((sub) => {
                             const service = getServiceDetails(sub.serviceId);
                             const isCustom = !service;
@@ -257,6 +257,7 @@ const Dashboard: React.FC = () => {
                                                 serviceName={isCustom ? (sub.customName || '?') : service.name}
                                                 serviceColor={sub.isActive ? itemColor! : '#888'}
                                                 domain={service?.url}
+                                                customIcon={sub.customIcon}
                                                 className="w-8 h-8 shadow-sm"
                                             />
                                         </div>

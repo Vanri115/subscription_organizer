@@ -4,15 +4,16 @@ interface ServiceIconProps {
     serviceName: string;
     serviceColor: string;
     domain?: string;
+    customIcon?: string;
     className?: string;
 }
 
-const ServiceIcon: React.FC<ServiceIconProps> = ({ serviceName, serviceColor, domain, className = "w-10 h-10" }) => {
+const ServiceIcon: React.FC<ServiceIconProps> = ({ serviceName, serviceColor, domain, customIcon, className = "w-10 h-10" }) => {
     const [imageError, setImageError] = useState(false);
 
     // Use unavatar.io with fallback=false to trigger onError when no icon is found
     // instead of showing a generic default icon
-    const iconUrl = domain ? `https://unavatar.io/${domain}?fallback=false` : null;
+    const iconUrl = customIcon || (domain ? `https://unavatar.io/${domain}?fallback=false` : null);
 
     if (imageError || !iconUrl) {
         return (
