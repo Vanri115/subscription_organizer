@@ -200,7 +200,7 @@ const Ranking: React.FC = () => {
 
     return (
         <div className="p-4 max-w-md mx-auto min-h-screen pb-24">
-            <header className="pb-6 flex items-center justify-between">
+            <header className="pb-4 flex items-center justify-between">
                 <button
                     onClick={() => navigate('/settings')}
                     className="text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-full transition-colors"
@@ -208,10 +208,7 @@ const Ranking: React.FC = () => {
                 >
                     <Settings size={20} />
                 </button>
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold text-foreground">みんなのランキング</h1>
-                    <p className="text-xs text-muted-foreground mt-0.5">リアルタイム更新中</p>
-                </div>
+                <h1 className="text-2xl font-bold text-foreground">みんなのランキング</h1>
                 <div className="w-9" />
             </header>
 

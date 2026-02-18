@@ -326,7 +326,7 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="p-4 max-w-md mx-auto space-y-6 pb-24">
-            <header className="pb-2 flex items-center justify-between">
+            <header className="pb-4 flex items-center justify-between">
                 <button
                     onClick={() => navigate('/settings')}
                     className="text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-full transition-colors"
