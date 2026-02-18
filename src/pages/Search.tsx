@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { POPULAR_SERVICES } from '../data/services';
 import type { Plan, Service, ServiceCategory, UserSubscription } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
-import { Search as SearchIcon, X, Check, ChevronDown, Plus, Info, Camera, ZoomIn, ZoomOut, Upload } from 'lucide-react';
+import { Search as SearchIcon, X, Check, ChevronDown, Plus, Info, Camera, ZoomIn, ZoomOut, Upload, ChevronLeft } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../utils/calculations';
@@ -167,9 +167,20 @@ const Search: React.FC = () => {
 
     return (
         <div className="p-4 max-w-md mx-auto min-h-screen pb-24 bg-background text-foreground transition-colors duration-300">
-            <header className="mb-6 pt-2 text-center">
-                <h1 className="text-2xl font-bold mb-4 text-foreground">新しいサブスクを追加</h1>
+            <header className="pb-4 flex items-center justify-between">
+                <button
+                    onClick={() => navigate('/')}
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-full transition-colors"
+                    title="戻る"
+                >
+                    <ChevronLeft size={20} />
+                </button>
+                <h1 className="text-2xl font-bold text-foreground">新しいサブスクを追加</h1>
+                <div className="w-9" />
+            </header>
 
+            {/* Search Section */}
+            <div className="mb-6">
                 {/* Search Bar */}
                 <div className="relative mb-4">
                     <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
@@ -197,7 +208,7 @@ const Search: React.FC = () => {
                         </button>
                     ))}
                 </div>
-            </header>
+            </div>
 
             {/* Service List */}
             <div className="space-y-3">
