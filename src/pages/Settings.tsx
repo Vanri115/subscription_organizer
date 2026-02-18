@@ -206,18 +206,10 @@ const Settings: React.FC = () => {
                 <div className="w-9" />
             </header>
 
-            {/* Profile Share Link */}
+            {/* Profile Quick Link */}
             {user && isPublic && (
                 <button
-                    onClick={async () => {
-                        const url = `${window.location.origin}/user/${user.id}`;
-                        if (navigator.share) {
-                            try { await navigator.share({ title: 'マイサブスク', text: `${displayName || '名無しさん'}のサブスクリストを公開中！`, url }); } catch { /* cancelled */ }
-                        } else {
-                            await navigator.clipboard.writeText(url);
-                            alert('プロフィールリンクをコピーしました！');
-                        }
-                    }}
+                    onClick={() => navigate(`/user/${user.id}`)}
                     className="w-full flex items-center justify-between bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-4 hover:from-primary/15 hover:to-primary/10 transition-colors"
                 >
                     <div className="flex items-center gap-3">
@@ -230,13 +222,10 @@ const Settings: React.FC = () => {
                         )}
                         <div className="text-left">
                             <p className="font-bold text-sm text-foreground">{displayName || '名無しさん'}</p>
-                            <p className="text-xs text-primary">🔗 プロフィールをシェアする</p>
+                            <p className="text-xs text-primary">マイプロフィールを見る →</p>
                         </div>
                     </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                        <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                    </svg>
+                    <ChevronRight size={16} className="text-primary" />
                 </button>
             )}
 
