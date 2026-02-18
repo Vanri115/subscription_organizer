@@ -623,7 +623,7 @@ const Dashboard: React.FC = () => {
 
             {/* Memo Edit Modal */}
             {editingSub && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setEditingSub(null)}>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setEditingSub(null)}>
                     <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl animate-in slide-in-from-bottom-4 duration-300" onClick={(e) => e.stopPropagation()}>
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-4 border-b border-border">
