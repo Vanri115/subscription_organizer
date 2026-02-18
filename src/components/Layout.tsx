@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, Settings, Plus } from 'lucide-react';
+import { Home, Settings, Plus, Trophy } from 'lucide-react';
 
 const Layout: React.FC = () => {
     const location = useLocation();
@@ -33,6 +33,15 @@ const Layout: React.FC = () => {
                     >
                         <Plus size={24} />
                         <span className="text-[10px] font-medium">登録</span>
+                    </Link>
+
+                    <Link
+                        to="/ranking"
+                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/ranking') ? 'text-primary' : 'text-gray-400 hover:text-gray-200'
+                            }`}
+                    >
+                        <Trophy size={24} />
+                        <span className="text-[10px] font-medium">ランキング</span>
                     </Link>
 
                     <Link

@@ -46,7 +46,7 @@ const Search: React.FC = () => {
         const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === 'All' || service.category === selectedCategory;
         return matchesSearch && matchesCategory;
-    });
+    }).sort((a, b) => a.name.localeCompare(b.name));
 
     const handleAddSubscription = () => {
         if (!selectedService || !selectedPlan) return;

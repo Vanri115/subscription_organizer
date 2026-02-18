@@ -1,14 +1,27 @@
 import React from 'react';
-import { Moon, Sun, CreditCard, ChevronRight, Trash2 } from 'lucide-react';
+import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Settings: React.FC = () => {
     const { theme, toggleTheme, currency, setCurrency } = useSettings();
+    const { user, signOut } = useAuth();
+    const navigate = useNavigate();
 
     const handleClearData = () => {
         if (window.confirm('本当にすべてのデータを削除しますか？この操作は取り消せません。')) {
-            localStorage.removeItem('subscriptions');
-            window.location.reload();
+            // Only remove subscription data, keep settings
+            import('../utils/storage').then(({ clearSubscriptions }) => {
+                clearSubscriptions();
+                window.location.reload();
+            });
+        }
+    };
+
+    const handleLogout = async () => {
+        if (window.confirm('ログアウトしますか？')) {
+            await signOut();
         }
     };
 
@@ -17,6 +30,51 @@ const Settings: React.FC = () => {
             <header className="pt-2 mb-6">
                 <h1 className="text-2xl font-bold text-foreground">設定</h1>
             </header>
+
+            {/* Account Section */}
+            <section className="space-y-3">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">アカウント</h2>
+                <div className="bg-card rounded-2xl overflow-hidden border border-border shadow-sm">
+                    {user ? (
+                        <div className="p-4">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <div className="p-2 bg-primary/10 rounded-full text-primary">
+                                    <User size={24} />
+                                </div>
+                                <div className="overflow-hidden">
+                                    <p className="font-bold text-sm truncate">{user.email}</p>
+                                    <p className="text-xs text-muted-foreground">ログイン中</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center justify-center space-x-2 bg-muted hover:bg-muted/80 text-foreground py-2 rounded-xl transition-colors text-sm font-medium"
+                            >
+                                <LogOut size={16} />
+                                <span>ログアウト</span>
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => navigate('/login')}
+                            className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                        >
+                            <div className="flex items-center space-x-3">
+                                <div className="p-2 bg-muted rounded-full text-muted-foreground">
+                                    <User size={20} />
+                                </div>
+                                <span className="font-medium text-card-foreground">ログイン / 登録</span>
+                            </div>
+                            <ChevronRight size={16} className="text-muted-foreground" />
+                        </button>
+                    )}
+                </div>
+                {!user && (
+                    <p className="text-xs text-muted-foreground px-2">
+                        ログインするとクラウド同期やランキング機能が利用できます。
+                    </p>
+                )}
+            </section>
 
             {/* Appearance Section */}
             <section className="space-y-3">
