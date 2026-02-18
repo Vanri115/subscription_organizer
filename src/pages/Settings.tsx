@@ -117,7 +117,7 @@ const Settings: React.FC = () => {
 
     return (
         <div className="p-4 max-w-md mx-auto pb-24 space-y-8">
-            <header className="pt-2 mb-6">
+            <header className="pt-2 mb-6 text-center">
                 <h1 className="text-2xl font-bold text-foreground">設定</h1>
             </header>
 
@@ -367,8 +367,8 @@ const Settings: React.FC = () => {
                         }}
                         disabled={sendingFeedback || !feedbackText.trim()}
                         className={`w-full flex items-center justify-center space-x-2 py-3 rounded-xl font-bold text-sm transition-all ${feedbackText.trim() && !sendingFeedback
-                                ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-sm'
-                                : 'bg-muted text-muted-foreground cursor-not-allowed'
+                            ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-sm'
+                            : 'bg-muted text-muted-foreground cursor-not-allowed'
                             }`}
                     >
                         <Send size={18} />

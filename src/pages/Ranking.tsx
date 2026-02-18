@@ -266,13 +266,21 @@ const Ranking: React.FC = () => {
                         {(activeTab === 'favorite' || activeTab === 'wasteful') && voteRankings[activeTab].map((item, index) => {
                             const service = getService(item.serviceId);
                             const rank = index + 1;
+                            const starInfo = starRankings.find(s => s.serviceId === item.serviceId);
                             return (
                                 <div key={item.serviceId} onClick={() => navigate(`/service/${item.serviceId}`)} className="cursor-pointer flex items-center bg-card border border-border rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow duration-150">
                                     <div className={`w-8 h-8 flex items-center justify-center font-black italic text-lg mr-3 ${rank <= 3 ? 'text-yellow-500' : 'text-muted-foreground/50'}`}>{rank}</div>
                                     <ServiceIcon serviceName={service.name} domain={service.url} serviceColor={service.color} className="w-10 h-10 mr-3 shadow-md" />
                                     <div className="flex-1 min-w-0">
                                         <h4 className="font-bold text-sm truncate">{service.name}</h4>
-                                        <p className="text-xs text-muted-foreground">{service.category}</p>
+                                        {starInfo ? (
+                                            <div className="flex items-center">
+                                                <StarRating rating={starInfo.average} readonly size={12} />
+                                                <span className="text-[10px] text-muted-foreground ml-1">({starInfo.count})</span>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-muted-foreground">{service.category}</p>
+                                        )}
                                     </div>
                                     <div className="text-right">
                                         <span className="block font-bold text-primary">{item.votes}</span>
