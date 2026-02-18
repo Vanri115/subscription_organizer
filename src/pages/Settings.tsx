@@ -1,21 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare } from 'lucide-react';
+import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { validateDisplayName } from '../utils/validator';
-import { POPULAR_SERVICES } from '../data/services';
-import StarRating from '../components/StarRating';
-
-
-interface UserReview {
-    id: number;
-    service_id: string;
-    rating: number;
-    comment: string;
-    created_at: string;
-}
+import { syncToCloud, setPublicProfile } from '../utils/sync';
 
 const Settings: React.FC = () => {
     const { theme, toggleTheme, currency, setCurrency } = useSettings();
@@ -27,13 +17,13 @@ const Settings: React.FC = () => {
     const [isEditingName, setIsEditingName] = useState(false);
     const [nameError, setNameError] = useState<string | null>(null);
 
-    // Reviews State
-    const [myReviews, setMyReviews] = useState<UserReview[]>([]);
+    // Public Profile State
+    const [isPublic, setIsPublic] = useState(false);
+    const [syncing, setSyncing] = useState(false);
 
     useEffect(() => {
         if (user) {
             fetchProfile();
-            fetchMyReviews();
         }
     }, [user]);
 
@@ -41,24 +31,14 @@ const Settings: React.FC = () => {
         if (!user) return;
         const { data } = await supabase
             .from('profiles')
-            .select('display_name')
+            .select('display_name, is_public')
             .eq('id', user.id)
             .single();
 
-        if (data?.display_name) {
-            setDisplayName(data.display_name);
+        if (data) {
+            if (data.display_name) setDisplayName(data.display_name);
+            if (data.is_public !== undefined) setIsPublic(data.is_public);
         }
-    };
-
-    const fetchMyReviews = async () => {
-        if (!user) return;
-        const { data } = await supabase
-            .from('reviews')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-
-        if (data) setMyReviews(data);
     };
 
     const handleSaveName = async () => {
@@ -71,13 +51,50 @@ const Settings: React.FC = () => {
 
         const { error: upsertError } = await supabase
             .from('profiles')
-            .upsert({ id: user.id, display_name: displayName });
+            .upsert({ id: user.id, display_name: displayName, updated_at: new Date().toISOString() });
 
         if (upsertError) {
             alert('プロフィールの保存に失敗しました');
         } else {
             setIsEditingName(false);
             setNameError(null);
+        }
+    };
+
+    const handleTogglePublic = async () => {
+        if (!user) return;
+        const newValue = !isPublic;
+
+        try {
+            setSyncing(true);
+            // 1. Update Profile Visibility
+            await setPublicProfile(user.id, newValue);
+            setIsPublic(newValue);
+
+            // 2. If turning ON, auto-sync data
+            if (newValue) {
+                await syncToCloud(user.id);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('設定の変更に失敗しました');
+            setIsPublic(!newValue); // Revert
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+    const handleManualSync = async () => {
+        if (!user) return;
+        try {
+            setSyncing(true);
+            await syncToCloud(user.id);
+            alert('クラウドと同期しました！');
+        } catch (error) {
+            console.error(error);
+            alert('同期に失敗しました');
+        } finally {
+            setSyncing(false);
         }
     };
 
@@ -158,38 +175,65 @@ const Settings: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* My Reviews Link (Accordion style or separate page? List here implies checking history) */}
-                            {myReviews.length > 0 && (
-                                <div className="pt-4 border-t border-border">
-                                    <h3 className="text-sm font-bold mb-3 flex items-center">
-                                        <MessageSquare size={16} className="mr-2" />
-                                        投稿したレビュー ({myReviews.length})
-                                    </h3>
-                                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1 scrollbar-thin">
-                                        {myReviews.map(review => {
-                                            const service = POPULAR_SERVICES.find(s => s.id === review.service_id);
-                                            return (
-                                                <div
-                                                    key={review.id}
-                                                    onClick={() => navigate(`/service/${review.service_id}`)}
-                                                    className="bg-muted/30 p-3 rounded-xl cursor-pointer hover:bg-muted/60 transition-colors"
-                                                >
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <span className="font-bold text-sm">{service?.name || review.service_id}</span>
-                                                        <span className="text-[10px] text-muted-foreground">
-                                                            {new Date(review.created_at).toLocaleDateString()}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center space-x-2 mb-1">
-                                                        <StarRating rating={review.rating} readonly size={12} />
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground line-clamp-1">{review.comment}</p>
-                                                </div>
-                                            );
-                                        })}
+                            {/* My Reviews Link */}
+                            <button
+                                onClick={() => navigate('/settings/reviews')}
+                                className="w-full flex items-center justify-between p-3 mt-4 bg-muted/30 hover:bg-muted/50 rounded-xl transition-colors border border-border/50"
+                            >
+                                <div className="flex items-center space-x-3">
+                                    <div className="p-2 bg-blue-500/10 rounded-full text-blue-500">
+                                        <MessageSquare size={18} />
+                                    </div>
+                                    <div className="text-left">
+                                        <span className="block font-bold text-sm text-foreground">投稿したレビュー</span>
+                                        <span className="text-xs text-muted-foreground">過去の評価・コメントを確認</span>
                                     </div>
                                 </div>
-                            )}
+                                <ChevronRight size={16} className="text-muted-foreground" />
+                            </button>
+
+                            {/* Public Profile Section */}
+                            <div className="pt-4 border-t border-border mt-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-sm font-bold flex items-center">
+                                        <Globe size={16} className="mr-2" />
+                                        公開プロフィール
+                                    </h3>
+                                    <div
+                                        onClick={handleTogglePublic}
+                                        className={`w-10 h-6 rounded-full p-1 cursor-pointer transition-colors duration-300 ${isPublic ? 'bg-primary' : 'bg-muted'}`}
+                                    >
+                                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ${isPublic ? 'translate-x-4' : ''}`} />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground mb-3">
+                                    オンにすると、あなたのサブスクリストが他のユーザーに公開されます。
+                                </p>
+
+                                {isPublic && (
+                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                        <button
+                                            onClick={() => navigate(`/user/${user.id}`)}
+                                            className="w-full flex items-center justify-center space-x-2 bg-primary/10 text-primary py-2 rounded-xl text-sm font-bold hover:bg-primary/20 transition-colors"
+                                        >
+                                            <Eye size={16} />
+                                            <span>自分のページを見る</span>
+                                        </button>
+
+                                        <button
+                                            onClick={handleManualSync}
+                                            disabled={syncing}
+                                            className="w-full flex items-center justify-center space-x-2 bg-muted hover:bg-muted/80 text-foreground py-2 rounded-xl transition-colors text-sm font-medium"
+                                        >
+                                            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+                                            <span>{syncing ? '同期中...' : 'クラウドと同期する'}</span>
+                                        </button>
+                                        <p className="text-[10px] text-center text-muted-foreground">
+                                            ※ ローカルのデータをクラウドに上書きします
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
 
                             <button
                                 onClick={handleLogout}

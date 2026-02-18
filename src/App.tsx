@@ -5,6 +5,8 @@ import Search from './pages/Search';
 import Ranking from './pages/Ranking';
 import ServiceDetail from './pages/ServiceDetail';
 import Settings from './pages/Settings';
+import MyReviews from './pages/MyReviews'; // Added import for MyReviews
+import UserProfile from './pages/UserProfile'; // Added import
 import { SettingsProvider } from './contexts/SettingsContext';
 
 import { AuthProvider } from './contexts/AuthContext';
@@ -24,6 +26,8 @@ function App() {
                 <Route path="ranking" element={<Ranking />} />
                 <Route path="service/:id" element={<ServiceDetail />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="settings/reviews" element={<MyReviews />} /> {/* Added MyReviews route */}
+                <Route path="user/:id" element={<UserProfile />} /> {/* Added UserProfile route */}
               </Route>
             </Routes>
           </div>

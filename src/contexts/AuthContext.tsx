@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { syncOnLogin } from '../utils/sync';
 
 interface AuthContextType {
     user: User | null;
@@ -26,11 +25,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
-                // Trigger sync
-                syncOnLogin(session.user.id).then(() => {
-                    // Optional: Trigger a re-render or event to update dashboard
-                    window.dispatchEvent(new Event('storage'));
-                });
+                // Optional: Trigger a re-render or event to update dashboard
+                window.dispatchEvent(new Event('storage'));
             }
             setLoading(false);
         });
@@ -40,9 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(session);
             setUser(session?.user ?? null);
             if (event === 'SIGNED_IN' && session?.user) {
-                syncOnLogin(session.user.id).then(() => {
-                    window.dispatchEvent(new Event('storage'));
-                });
+                window.dispatchEvent(new Event('storage'));
             }
             setLoading(false);
         });
