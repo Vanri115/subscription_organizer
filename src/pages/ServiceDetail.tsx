@@ -6,13 +6,11 @@ import StarRating from '../components/StarRating';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { ArrowLeft, Send, User as UserIcon } from 'lucide-react';
-import { containsProfanity } from '../utils/validator';
 
 interface Review {
     id: number;
     user_id: string;
     rating: number;
-    comment: string;
     created_at: string;
     profiles?: {
         display_name: string;
@@ -27,13 +25,12 @@ const ServiceDetail: React.FC = () => {
     const service = POPULAR_SERVICES.find((s) => s.id === id);
 
     const [reviews, setReviews] = useState<Review[]>([]);
-    const [myReview, setMyReview] = useState<{ rating: number; comment: string } | null>(null);
+    const [myReview, setMyReview] = useState<{ rating: number } | null>(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
     // Form State
     const [rating, setRating] = useState(0);
-    const [comment, setComment] = useState('');
 
     useEffect(() => {
         if (service) {
@@ -61,9 +58,8 @@ const ServiceDetail: React.FC = () => {
             if (user) {
                 const userReview = data.find((r: any) => r.user_id === user.id);
                 if (userReview) {
-                    setMyReview({ rating: userReview.rating, comment: userReview.comment });
+                    setMyReview({ rating: userReview.rating });
                     setRating(userReview.rating);
-                    setComment(userReview.comment);
                 }
             }
         }
@@ -74,16 +70,10 @@ const ServiceDetail: React.FC = () => {
         e.preventDefault();
         if (!user || !service || rating === 0) return;
 
-        if (containsProfanity(comment)) {
-            alert('不適切な表現が含まれているため投稿できません。');
-            return;
-        }
-
         setSubmitting(true);
 
         try {
             // 1. Ensure profile (Safe Check)
-            // We only insert if the profile doesn't exist to avoid overwriting custom names.
             const { data: profile } = await supabase.from('profiles').select('id').eq('id', user.id).single();
 
             if (!profile) {
@@ -96,24 +86,24 @@ const ServiceDetail: React.FC = () => {
                     }, { onConflict: 'id', ignoreDuplicates: true });
             }
 
-            // 2. Upsert Review
+            // 2. Upsert Review (Rating Only)
             const { error } = await supabase
                 .from('reviews')
                 .upsert({
                     user_id: user.id,
                     service_id: service.id,
                     rating,
-                    comment,
+                    // comment is omitted
                 }, { onConflict: 'user_id, service_id' });
 
             if (error) throw error;
 
             // Refresh
             await fetchReviews();
-            alert('レビューを送信しました！');
+            alert('評価を送信しました！');
         } catch (error) {
             console.error(error);
-            alert('レビューの送信に失敗しました。');
+            alert('評価の送信に失敗しました。');
         } finally {
             setSubmitting(false);
         }
@@ -134,7 +124,7 @@ const ServiceDetail: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors">
                     <ArrowLeft size={24} />
                 </button>
-                <h1 className="text-lg font-bold truncate">{service.name} のレビュー</h1>
+                <h1 className="text-lg font-bold truncate">{service.name} の評価</h1>
             </div>
 
             <div className="max-w-md mx-auto p-4 space-y-6">
@@ -157,20 +147,20 @@ const ServiceDetail: React.FC = () => {
                         <span className="text-4xl font-bold mb-2">{averageRating}</span>
                         <StarRating rating={Number(averageRating)} readonly size={28} />
                         <span className="text-sm text-muted-foreground mt-2">
-                            {reviews.length} 件のレビュー
+                            {reviews.length} 件の評価
                         </span>
                     </div>
                 </div>
 
                 {/* Review Form */}
                 <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-                    <h3 className="font-bold mb-4 flex items-center">
-                        {myReview ? 'レビューを編集' : 'レビューを書く'}
+                    <h3 className="font-bold mb-4 flex items-center justify-center">
+                        {myReview ? '評価を編集' : 'このサービスを評価する'}
                     </h3>
 
                     {!user ? (
                         <div className="text-center py-6 bg-muted/30 rounded-xl">
-                            <p className="text-sm mb-4">レビューを投稿するにはログインが必要です</p>
+                            <p className="text-sm mb-4">評価するにはログインが必要です</p>
                             <button
                                 onClick={() => navigate('/login')}
                                 className="bg-primary text-primary-foreground px-6 py-2 rounded-full font-bold text-sm shadow-md hover:scale-105 transition-transform"
@@ -179,25 +169,18 @@ const ServiceDetail: React.FC = () => {
                             </button>
                         </div>
                     ) : (
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="flex justify-center py-2">
-                                <StarRating rating={rating} onRatingChange={setRating} size={32} />
+                                <StarRating rating={rating} onRatingChange={setRating} size={40} />
                             </div>
-                            <textarea
-                                value={comment}
-                                onChange={(e) => setComment(e.target.value)}
-                                placeholder="このサブスクの感想を教えてください..."
-                                className="w-full bg-muted border border-border rounded-xl p-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                                required
-                            />
-                            <p className="text-xs text-muted-foreground">※不適切な表現は自動的にブロックされます</p>
+
                             <button
                                 type="submit"
                                 disabled={submitting || rating === 0}
                                 className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center space-x-2"
                             >
                                 <Send size={18} />
-                                <span>{submitting ? '送信中...' : '投稿する'}</span>
+                                <span>{submitting ? '送信中...' : '評価する'}</span>
                             </button>
                         </form>
                     )}
@@ -205,38 +188,35 @@ const ServiceDetail: React.FC = () => {
 
                 {/* Review List */}
                 <div className="space-y-4">
-                    <h3 className="font-bold px-2">みんなのレビュー</h3>
+                    <h3 className="font-bold px-2">みんなの評価</h3>
                     {loading ? (
                         <div className="text-center py-8 text-muted-foreground">読み込み中...</div>
                     ) : reviews.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-xl">
-                            まだレビューはありません。<br />最初のレビューを投稿しませんか？
+                            まだ評価はありません。<br />最初の評価を投稿しませんか？
                         </div>
                     ) : (
                         reviews.map((review) => (
-                            <div key={review.id} className="bg-card border border-border rounded-xl p-4 shadow-sm">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="flex items-center space-x-2">
-                                        {/* Avatar Display */}
-                                        <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
-                                            {review.profiles?.avatar_url ? (
-                                                <img src={review.profiles.avatar_url} alt="Av" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <UserIcon size={16} className="text-muted-foreground" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-foreground">
-                                                {review.profiles?.display_name || `User ${review.user_id.slice(0, 4)}...`}
-                                            </p>
-                                            <StarRating rating={review.rating} readonly size={14} />
-                                        </div>
+                            <div key={review.id} className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                    {/* Avatar Display */}
+                                    <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
+                                        {review.profiles?.avatar_url ? (
+                                            <img src={review.profiles.avatar_url} alt="Av" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <UserIcon size={20} className="text-muted-foreground" />
+                                        )}
                                     </div>
-                                    <span className="text-[10px] text-muted-foreground">
-                                        {new Date(review.created_at).toLocaleDateString()}
-                                    </span>
+                                    <div>
+                                        <p className="text-sm font-bold text-foreground">
+                                            {review.profiles?.display_name || `User ${review.user_id.slice(0, 4)}...`}
+                                        </p>
+                                        <StarRating rating={review.rating} readonly size={16} />
+                                    </div>
                                 </div>
-                                <p className="text-sm pl-10 whitespace-pre-wrap">{review.comment}</p>
+                                <span className="text-[10px] text-muted-foreground">
+                                    {new Date(review.created_at).toLocaleDateString()}
+                                </span>
                             </div>
                         ))
                     )}
