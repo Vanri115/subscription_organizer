@@ -136,7 +136,7 @@ const Analytics: React.FC = () => {
 
     const tabs: { id: AnalyticsTab; label: string; icon: React.ReactNode }[] = [
         { id: 'breakdown', label: '内訳', icon: <PieIcon size={14} /> },
-        { id: 'diagnosis', label: '節約診断', icon: <Lightbulb size={14} /> },
+        { id: 'diagnosis', label: '依存度診断', icon: <Lightbulb size={14} /> },
         { id: 'report', label: '年次レポート', icon: <FileText size={14} /> },
     ];
 
@@ -228,7 +228,7 @@ const Analytics: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Tab: 節約診断 */}
+                    {/* Tab: 依存度診断 */}
                     {activeTab === 'diagnosis' && (
                         <div className="space-y-4 animate-in fade-in duration-200">
                             {/* Dependency Score */}

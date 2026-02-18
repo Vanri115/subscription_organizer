@@ -616,16 +616,6 @@ const Settings: React.FC = () => {
                 </div>
             </section>
 
-            {/* Developer Info */}
-            <div className="py-6 flex flex-col items-center justify-center space-y-1 opacity-50 hover:opacity-100 transition-opacity cursor-default select-none">
-                <p className="text-xs font-bold text-muted-foreground">Developer: van</p>
-                <div className="flex items-center space-x-2 text-[10px] text-muted-foreground">
-                    <span>v1.0.0</span>
-                    <span>•</span>
-                    <span>2026.02.19</span>
-                </div>
-            </div>
-
             {/* Data Section */}
             <section className="space-y-3">
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">データ管理</h2>
@@ -646,6 +636,16 @@ const Settings: React.FC = () => {
                     現在はブラウザ内にのみデータが保存されています。キャッシュをクリアするとデータが消える可能性があります。
                 </p>
             </section>
+
+            {/* Developer Info (Moved to bottom) */}
+            <div className="py-8 flex flex-col items-center justify-center space-y-1 opacity-40 hover:opacity-100 transition-opacity cursor-default select-none">
+                <p className="text-xs font-bold text-muted-foreground">Developer: van</p>
+                <div className="flex items-center space-x-2 text-[10px] text-muted-foreground">
+                    <span>v1.0.0</span>
+                    <span>•</span>
+                    <span>2026.02.19</span>
+                </div>
+            </div>
 
             {/* Crop Modal */}
             {cropImage && (
