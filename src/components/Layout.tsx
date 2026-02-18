@@ -1,26 +1,13 @@
 import React from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Settings, Plus, Trophy, BarChart2 } from 'lucide-react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Home, Plus, Trophy, BarChart2 } from 'lucide-react';
 
 const Layout: React.FC = () => {
     const location = useLocation();
-    const navigate = useNavigate();
-
     const isActive = (path: string) => location.pathname === path;
 
     return (
         <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden font-sans">
-            {/* Common Header */}
-            <div className="flex items-center justify-end px-4 pt-3 pb-1 max-w-md mx-auto w-full">
-                <button
-                    onClick={() => navigate('/settings')}
-                    className={`p-2 rounded-full transition-colors ${isActive('/settings') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-                    title="設定"
-                >
-                    <Settings size={20} />
-                </button>
-            </div>
-
             {/* Main Content Area */}
             <div className="flex-1 overflow-y-auto pb-20">
                 <Outlet />
@@ -29,34 +16,19 @@ const Layout: React.FC = () => {
             {/* Bottom Navigation */}
             <div className="fixed bottom-0 left-0 right-0 border-t border-gray-800 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
                 <div className="flex justify-around items-center h-16 max-w-md mx-auto">
-                    <Link
-                        to="/"
-                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/') ? 'text-primary' : 'text-gray-400 hover:text-gray-200'}`}
-                    >
+                    <Link to="/" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/') ? 'text-primary' : 'text-gray-400 hover:text-gray-200'}`}>
                         <Home size={24} />
                         <span className="text-[10px] font-medium">サブスク</span>
                     </Link>
-
-                    <Link
-                        to="/search"
-                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/search') ? 'text-primary' : 'text-gray-400 hover:text-gray-200'}`}
-                    >
+                    <Link to="/search" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/search') ? 'text-primary' : 'text-gray-400 hover:text-gray-200'}`}>
                         <Plus size={24} />
                         <span className="text-[10px] font-medium">登録</span>
                     </Link>
-
-                    <Link
-                        to="/ranking"
-                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/ranking') ? 'text-primary' : 'text-gray-400 hover:text-gray-200'}`}
-                    >
+                    <Link to="/ranking" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/ranking') ? 'text-primary' : 'text-gray-400 hover:text-gray-200'}`}>
                         <Trophy size={24} />
                         <span className="text-[10px] font-medium">ランキング</span>
                     </Link>
-
-                    <Link
-                        to="/analytics"
-                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/analytics') ? 'text-primary' : 'text-gray-400 hover:text-gray-200'}`}
-                    >
+                    <Link to="/analytics" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/analytics') ? 'text-primary' : 'text-gray-400 hover:text-gray-200'}`}>
                         <BarChart2 size={24} />
                         <span className="text-[10px] font-medium">分析</span>
                     </Link>

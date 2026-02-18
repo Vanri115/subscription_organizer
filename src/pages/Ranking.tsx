@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Settings } from 'lucide-react';
 import { POPULAR_SERVICES } from '../data/services';
 import ServiceIcon from '../components/ServiceIcon';
 
@@ -199,10 +200,19 @@ const Ranking: React.FC = () => {
 
     return (
         <div className="p-4 max-w-md mx-auto min-h-screen pb-24">
-            <header className="pt-2 pb-6 text-center">
-                <h1 className="text-2xl font-bold text-foreground">みんなのランキング</h1>
-                <p className="text-xs text-muted-foreground mt-1">リアルタイム更新中</p>
-
+            <header className="pb-6 flex items-center justify-between">
+                <button
+                    onClick={() => navigate('/settings')}
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-full transition-colors"
+                    title="設定"
+                >
+                    <Settings size={20} />
+                </button>
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold text-foreground">みんなのランキング</h1>
+                    <p className="text-xs text-muted-foreground mt-0.5">リアルタイム更新中</p>
+                </div>
+                <div className="w-9" />
             </header>
 
             {/* Tabs */}

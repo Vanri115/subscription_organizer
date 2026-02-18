@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { UserSubscription, ServiceCategory } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
 import { calculateTotal, formatCurrency } from '../utils/calculations';
 import { POPULAR_SERVICES } from '../data/services';
-import { Trash2, Pencil, X, Calendar, FileText, GripHorizontal } from 'lucide-react';
+import { Trash2, Pencil, X, Calendar, FileText, GripHorizontal, Settings, Flame } from 'lucide-react';
 import { saveSnapshot } from '../utils/snapshot';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,12 +34,25 @@ import { SortableCategoryTab } from '../components/SortableCategoryTab';
 const Dashboard: React.FC = () => {
     const { currency, exchangeRate } = useSettings();
     const { user } = useAuth();
+    const navigate = useNavigate();
+
+    // Streak logic
+    const streak = useMemo(() => {
+        const today = new Date().toISOString().slice(0, 10);
+        const lastVisit = localStorage.getItem('last_visit_date');
+        const currentStreak = parseInt(localStorage.getItem('visit_streak') || '0', 10);
+        if (lastVisit === today) return currentStreak;
+        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+        const newStreak = lastVisit === yesterday ? currentStreak + 1 : 1;
+        localStorage.setItem('last_visit_date', today);
+        localStorage.setItem('visit_streak', String(newStreak));
+        return newStreak;
+    }, []);
     const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
     const [loading, setLoading] = useState(true);
     const [sortMode, setSortMode] = useState<'default' | 'price_desc' | 'price_asc' | 'name_asc'>('default');
     const [categoryFilter, setCategoryFilter] = useState<ServiceCategory | 'All'>('All');
 
-    const navigate = useNavigate();
 
     // Sensors for DnD — drag handle approach:
     // Short delay (200ms) on the handle to prevent accidental drags on quick taps.
@@ -313,19 +326,21 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="p-4 max-w-md mx-auto space-y-6 pb-24">
+            {/* Header: gear left, title center, share right */}
             <header className="pb-2 flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-foreground">
-                    マイサブスク
-                </h1>
-                {user && (
+                <button
+                    onClick={() => navigate('/settings')}
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-full transition-colors"
+                    title="設定"
+                >
+                    <Settings size={20} />
+                </button>
+                <h1 className="text-2xl font-bold text-foreground">マイサブスク</h1>
+                {user ? (
                     <button
                         onClick={async () => {
                             const url = `${window.location.origin}/user/${user.id}`;
-                            const shareData = {
-                                title: 'マイサブスク',
-                                text: '私のサブスクリストを公開しました！ #マイサブスク',
-                                url,
-                            };
+                            const shareData = { title: 'マイサブスク', text: '私のサブスクリストを公開しました！ #マイサブスク', url };
                             if (navigator.share) {
                                 try { await navigator.share(shareData); } catch { /* cancelled */ }
                             } else {
@@ -337,33 +352,56 @@ const Dashboard: React.FC = () => {
                         title="シェア"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                            <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                         </svg>
                     </button>
+                ) : (
+                    <div className="w-9" />
                 )}
             </header>
 
-            {/* Summary Card */}
-            {/* Summary Card */}
-            <div ref={summaryRef} className="relative overflow-hidden rounded-2xl p-5 shadow-lg border border-border/50 bg-card">
-                <div className="relative z-10">
-                    <div className="flex items-end justify-between">
+            {/* Summary Card - Gradient redesign */}
+            <div ref={summaryRef} className="relative overflow-hidden rounded-2xl shadow-xl">
+                {/* Gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700" />
+                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                <div className="relative z-10 p-5">
+                    <div className="flex items-start justify-between mb-3">
                         <div>
-                            <p className="text-muted-foreground text-xs font-medium mb-1">月額合計</p>
-                            <p className="text-3xl font-extrabold text-foreground tracking-tight">
+                            <p className="text-indigo-200 text-xs font-medium mb-1">月額合計</p>
+                            <p className="text-4xl font-black text-white tracking-tight">
                                 {formatCurrency(monthlyTotal, currency, exchangeRate)}
                             </p>
-                            {currency === 'USD' && <p className="text-[10px] text-muted-foreground mt-0.5">1 USD ≈ {Math.round(1 / (exchangeRate || 0.0066))} JPY</p>}
+                            {currency === 'USD' && <p className="text-[10px] text-indigo-300 mt-0.5">1 USD ≈ {Math.round(1 / (exchangeRate || 0.0066))} JPY</p>}
                         </div>
-                        <div className="text-right">
-                            <p className="text-xs text-muted-foreground mb-0.5">年額見込み</p>
-                            <p className="text-base font-bold text-emerald-500">
-                                {formatCurrency(yearlyTotal, currency, exchangeRate)}
-                            </p>
-                            <span className="text-[10px] text-muted-foreground">
-                                契約中 {subscriptions.filter(s => s.isActive).length}件
-                            </span>
+                        <div className="flex flex-col items-end gap-2">
+                            {streak > 1 && (
+                                <div className="flex items-center gap-1 bg-orange-500/30 backdrop-blur-sm border border-orange-400/30 rounded-full px-2.5 py-1">
+                                    <Flame size={12} className="text-orange-300" />
+                                    <span className="text-xs font-bold text-orange-200">{streak}日連続</span>
+                                </div>
+                            )}
+                            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2 text-right">
+                                <p className="text-[10px] text-indigo-200">年額見込み</p>
+                                <p className="text-lg font-black text-emerald-300">{formatCurrency(yearlyTotal, currency, exchangeRate)}</p>
+                            </div>
                         </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-3 border-t border-white/20">
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                                <span className="text-xs text-indigo-200">アクティブ <span className="font-bold text-white">{subscriptions.filter(s => s.isActive).length}</span>件</span>
+                            </div>
+                            {subscriptions.filter(s => !s.isActive).length > 0 && (
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-rose-400" />
+                                    <span className="text-xs text-indigo-200">停止中 <span className="font-bold text-white">{subscriptions.filter(s => !s.isActive).length}</span>件</span>
+                                </div>
+                            )}
+                        </div>
+                        <span className="text-[10px] text-indigo-300">{subscriptions.length}件登録</span>
                     </div>
                 </div>
             </div>
