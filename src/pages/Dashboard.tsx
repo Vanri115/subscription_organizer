@@ -41,9 +41,8 @@ const Dashboard: React.FC = () => {
     const navigate = useNavigate();
 
     // Sensors for DnD
-    // - TouchSensor: mobile long-press (500ms) to drag, normal swipe = scroll
-    // - PointerSensor: mouse drag with small distance threshold
-    // - KeyboardSensor: keyboard accessibility
+    // TouchSensor handles mobile touch: long-press 500ms = drag, swipe = scroll
+    // PointerSensor handles mouse: also requires 500ms hold to avoid accidental drags
     const sensors = useSensors(
         useSensor(TouchSensor, {
             activationConstraint: {
@@ -53,7 +52,8 @@ const Dashboard: React.FC = () => {
         }),
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 8,
+                delay: 500,
+                tolerance: 10,
             },
         }),
         useSensor(KeyboardSensor, {
