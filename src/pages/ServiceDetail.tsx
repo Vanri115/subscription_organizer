@@ -79,24 +79,39 @@ const ServiceDetail: React.FC = () => {
         }
 
         setSubmitting(true);
-        const { error } = await supabase
-            .from('reviews')
-            .upsert({
-                user_id: user.id,
-                service_id: service.id,
-                rating,
-                comment,
-            }, { onConflict: 'user_id, service_id' });
 
-        if (error) {
-            alert('レビューの送信に失敗しました。');
-            console.error(error);
-        } else {
+        try {
+            // 1. Ensure profile (Safe Upsert)
+            // Even if existing, this ensures we have a row to link to
+            await supabase
+                .from('profiles')
+                .upsert({
+                    id: user.id,
+                    display_name: user.email?.split('@')[0] || 'User',
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'id', ignoreDuplicates: true }); // Only create if missing
+
+            // 2. Upsert Review
+            const { error } = await supabase
+                .from('reviews')
+                .upsert({
+                    user_id: user.id,
+                    service_id: service.id,
+                    rating,
+                    comment,
+                }, { onConflict: 'user_id, service_id' });
+
+            if (error) throw error;
+
             // Refresh
             await fetchReviews();
             alert('レビューを送信しました！');
+        } catch (error) {
+            console.error(error);
+            alert('レビューの送信に失敗しました。');
+        } finally {
+            setSubmitting(false);
         }
-        setSubmitting(false);
     };
 
     if (!service) {
