@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Send, Camera } from 'lucide-react';
+import { Moon, Sun, CreditCard, ChevronRight, Trash2, User, LogOut, Edit2, MessageSquare, Globe, RefreshCw, Eye, Send, Camera, ZoomIn, ZoomOut } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { validateDisplayName } from '../utils/validator';
 import { syncToCloud, setPublicProfile } from '../utils/sync';
+import Cropper from 'react-easy-crop';
+import type { Area } from 'react-easy-crop';
+import getCroppedImg from '../utils/cropImage';
 
 const Settings: React.FC = () => {
     const { theme, toggleTheme, currency, setCurrency } = useSettings();
@@ -20,6 +23,12 @@ const Settings: React.FC = () => {
     const [sendingFeedback, setSendingFeedback] = useState(false);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+    // Crop modal state
+    const [cropImage, setCropImage] = useState<string | null>(null);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
     // Public Profile State
     const [isPublic, setIsPublic] = useState(false);
@@ -138,32 +147,17 @@ const Settings: React.FC = () => {
                                         accept="image/*"
                                         className="hidden"
                                         id="avatar-upload"
-                                        onChange={async (e) => {
+                                        onChange={(e) => {
                                             const file = e.target.files?.[0];
-                                            if (!file || !user) return;
-                                            setUploadingAvatar(true);
-                                            try {
-                                                const ext = file.name.split('.').pop();
-                                                const filePath = `${user.id}/avatar.${ext}`;
-                                                const { error: uploadError } = await supabase.storage
-                                                    .from('avatars')
-                                                    .upload(filePath, file, { upsert: true });
-                                                if (uploadError) throw uploadError;
-                                                const { data: urlData } = supabase.storage
-                                                    .from('avatars')
-                                                    .getPublicUrl(filePath);
-                                                const publicUrl = urlData.publicUrl + '?t=' + Date.now();
-                                                await supabase.from('profiles').upsert({
-                                                    id: user.id, avatar_url: publicUrl, updated_at: new Date().toISOString()
-                                                });
-                                                setAvatarUrl(publicUrl);
-                                                alert('アイコンを更新しました！');
-                                            } catch (err) {
-                                                console.error(err);
-                                                alert('アイコンのアップロードに失敗しました。Supabaseの Storage に "avatars" バケットが存在するか確認してください。');
-                                            } finally {
-                                                setUploadingAvatar(false);
-                                            }
+                                            if (!file) return;
+                                            const reader = new FileReader();
+                                            reader.onload = () => {
+                                                setCropImage(reader.result as string);
+                                                setCrop({ x: 0, y: 0 });
+                                                setZoom(1);
+                                            };
+                                            reader.readAsDataURL(file);
+                                            e.target.value = ''; // reset to allow re-select
                                         }}
                                     />
                                     <label htmlFor="avatar-upload" className="cursor-pointer block">
@@ -452,6 +446,80 @@ const Settings: React.FC = () => {
                     現在はブラウザ内にのみデータが保存されています。キャッシュをクリアするとデータが消える可能性があります。
                 </p>
             </section>
+
+            {/* Crop Modal */}
+            {cropImage && (
+                <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
+                    <div className="relative flex-1">
+                        <Cropper
+                            image={cropImage}
+                            crop={crop}
+                            zoom={zoom}
+                            aspect={1}
+                            cropShape="round"
+                            showGrid={false}
+                            onCropChange={setCrop}
+                            onZoomChange={setZoom}
+                            onCropComplete={(_, areaPixels) => setCroppedAreaPixels(areaPixels)}
+                        />
+                    </div>
+                    <div className="bg-background p-4 space-y-4">
+                        <div className="flex items-center gap-3">
+                            <ZoomOut size={16} className="text-muted-foreground shrink-0" />
+                            <input
+                                type="range"
+                                min={1}
+                                max={3}
+                                step={0.1}
+                                value={zoom}
+                                onChange={(e) => setZoom(Number(e.target.value))}
+                                className="flex-1 accent-primary"
+                            />
+                            <ZoomIn size={16} className="text-muted-foreground shrink-0" />
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setCropImage(null)}
+                                className="flex-1 py-3 rounded-xl bg-muted text-muted-foreground font-bold text-sm"
+                            >
+                                キャンセル
+                            </button>
+                            <button
+                                disabled={uploadingAvatar}
+                                onClick={async () => {
+                                    if (!croppedAreaPixels || !user) return;
+                                    setUploadingAvatar(true);
+                                    try {
+                                        const blob = await getCroppedImg(cropImage, croppedAreaPixels);
+                                        const filePath = `${user.id}/avatar.jpg`;
+                                        const { error: uploadError } = await supabase.storage
+                                            .from('avatars')
+                                            .upload(filePath, blob, { upsert: true, contentType: 'image/jpeg' });
+                                        if (uploadError) throw uploadError;
+                                        const { data: urlData } = supabase.storage
+                                            .from('avatars')
+                                            .getPublicUrl(filePath);
+                                        const publicUrl = urlData.publicUrl + '?t=' + Date.now();
+                                        await supabase.from('profiles').upsert({
+                                            id: user.id, avatar_url: publicUrl, updated_at: new Date().toISOString()
+                                        });
+                                        setAvatarUrl(publicUrl);
+                                        setCropImage(null);
+                                    } catch (err) {
+                                        console.error(err);
+                                        alert('アップロードに失敗しました。');
+                                    } finally {
+                                        setUploadingAvatar(false);
+                                    }
+                                }}
+                                className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm"
+                            >
+                                {uploadingAvatar ? '保存中...' : '保存する'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
