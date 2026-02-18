@@ -35,7 +35,9 @@ const Dashboard: React.FC = () => {
             // 2. Sync from cloud if logged in
             if (user) {
                 try {
+                    console.log('[Dashboard] Starting handleSync from cloud...');
                     const cloudSubs = await loadFromCloud(user.id);
+                    console.log('[Dashboard] loadFromCloud result:', cloudSubs);
                     if (cloudSubs) {
                         setSubscriptions(cloudSubs);
                     }
