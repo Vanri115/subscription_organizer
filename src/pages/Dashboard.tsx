@@ -15,6 +15,7 @@ import {
     closestCenter,
     KeyboardSensor,
     PointerSensor,
+    TouchSensor,
     useSensor,
     useSensors,
     type DragEndEvent,
@@ -39,12 +40,20 @@ const Dashboard: React.FC = () => {
 
     const navigate = useNavigate();
 
-    // Sensors for DnD (Long press to drag, scroll-friendly)
+    // Sensors for DnD
+    // - TouchSensor: mobile long-press (500ms) to drag, normal swipe = scroll
+    // - PointerSensor: mouse drag with small distance threshold
+    // - KeyboardSensor: keyboard accessibility
     const sensors = useSensors(
-        useSensor(PointerSensor, {
+        useSensor(TouchSensor, {
             activationConstraint: {
                 delay: 500,
-                tolerance: 8,
+                tolerance: 10,
+            },
+        }),
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
             },
         }),
         useSensor(KeyboardSensor, {
