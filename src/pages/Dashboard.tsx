@@ -573,16 +573,15 @@ const Dashboard: React.FC = () => {
                                         <SortableSubscriptionItem key={sub.id} id={sub.id}>
                                             {(dragHandleProps) => (
                                                 <div className="relative">
-                                                    {/* Drag handle — touch/click here to drag */}
+                                                    {/* Drag handle — top center */}
                                                     <div
                                                         {...dragHandleProps}
-                                                        className="absolute top-1 left-1 z-10 p-1 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/40 hover:text-muted-foreground"
+                                                        className="absolute top-0 left-1/2 -translate-x-1/2 z-10 px-3 py-1 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/30 hover:text-muted-foreground/60"
                                                         title="ドラッグして並び替え"
                                                     >
-                                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                                                            <circle cx="4" cy="2" r="1.2" /><circle cx="8" cy="2" r="1.2" />
-                                                            <circle cx="4" cy="6" r="1.2" /><circle cx="8" cy="6" r="1.2" />
-                                                            <circle cx="4" cy="10" r="1.2" /><circle cx="8" cy="10" r="1.2" />
+                                                        <svg width="16" height="6" viewBox="0 0 16 6" fill="currentColor">
+                                                            <circle cx="3" cy="1.5" r="1.2" /><circle cx="8" cy="1.5" r="1.2" /><circle cx="13" cy="1.5" r="1.2" />
+                                                            <circle cx="3" cy="4.5" r="1.2" /><circle cx="8" cy="4.5" r="1.2" /><circle cx="13" cy="4.5" r="1.2" />
                                                         </svg>
                                                     </div>
                                                     {CardContent}
