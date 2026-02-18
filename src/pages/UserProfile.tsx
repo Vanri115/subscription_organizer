@@ -249,6 +249,22 @@ const UserProfile: React.FC = () => {
                 )}
 
             </div>
+
+            {/* Bottom Link to Top */}
+            <div className="flex justify-center pb-8 px-4">
+                <button
+                    onClick={() => navigate('/')}
+                    className="flex flex-col items-center space-y-2 group"
+                >
+                    <div className="bg-primary/10 p-4 rounded-full group-hover:bg-primary/20 transition-colors">
+                        <span className="text-3xl">💎</span>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-sm font-bold text-foreground">マイサブスクをはじめる</p>
+                        <p className="text-xs text-muted-foreground">あなたもサブスク管理を始めよう</p>
+                    </div>
+                </button>
+            </div>
         </div>
     );
 };

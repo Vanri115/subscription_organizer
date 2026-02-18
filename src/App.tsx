@@ -44,6 +44,10 @@ function App() {
                 <Route path="service/:id" element={<ServiceDetail />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="settings/reviews" element={<MyReviews />} /> {/* Added MyReviews route */}
+              </Route>
+
+              {/* Public Routes with Layout but NO Onboarding Guard */}
+              <Route element={<Layout />}>
                 <Route path="user/:id" element={<UserProfile />} /> {/* Added UserProfile route */}
               </Route>
             </Routes>
