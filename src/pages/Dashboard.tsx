@@ -39,12 +39,12 @@ const Dashboard: React.FC = () => {
 
     const navigate = useNavigate();
 
-    // Sensors for DnD (Long press to drag)
+    // Sensors for DnD (Long press to drag, scroll-friendly)
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                delay: 150,
-                tolerance: 5,
+                delay: 500,
+                tolerance: 8,
             },
         }),
         useSensor(KeyboardSensor, {
