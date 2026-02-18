@@ -114,7 +114,7 @@ const Settings: React.FC = () => {
     };
 
     return (
-        <div className="p-4 max-w-md mx-auto pb-24 space-y-6">
+        <div className="p-4 max-w-md mx-auto pb-24 space-y-8">
             <header className="pt-2 mb-6">
                 <h1 className="text-2xl font-bold text-foreground">設定</h1>
             </header>
@@ -173,24 +173,6 @@ const Settings: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
-                            </div>
-
-                            {/* My Reviews Section */}
-                            <div className="mt-4 pt-4 border-t border-border">
-                                <h3 className="text-sm font-bold flex items-center mb-2 px-1 text-muted-foreground uppercase tracking-wider">
-                                    <MessageSquare size={14} className="mr-2" />
-                                    レビュー管理
-                                </h3>
-                                <button
-                                    onClick={() => navigate('/settings/reviews')}
-                                    className="w-full flex items-center justify-between p-3 bg-card border border-border hover:bg-muted/50 rounded-xl transition-colors shadow-sm"
-                                >
-                                    <div className="text-left">
-                                        <span className="block font-bold text-sm text-foreground">投稿したレビューを確認</span>
-                                        <span className="text-xs text-muted-foreground">過去の評価・コメントの編集・削除</span>
-                                    </div>
-                                    <ChevronRight size={16} className="text-muted-foreground" />
-                                </button>
                             </div>
 
                             {/* Public Profile Section */}
@@ -266,6 +248,30 @@ const Settings: React.FC = () => {
                     )}
                 </div>
             </section>
+
+            {/* Review Management Section (New Location) */}
+            {user && (
+                <section className="space-y-3">
+                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">レビュー管理</h2>
+                    <div className="bg-card rounded-2xl overflow-hidden border border-border shadow-sm">
+                        <button
+                            onClick={() => navigate('/settings/reviews')}
+                            className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                        >
+                            <div className="flex items-center space-x-3">
+                                <div className="p-2 bg-orange-500/10 rounded-full text-orange-500">
+                                    <MessageSquare size={20} />
+                                </div>
+                                <div className="text-left">
+                                    <span className="block font-medium text-foreground">投稿したレビュー</span>
+                                    <span className="text-xs text-muted-foreground">過去の評価・コメントの確認</span>
+                                </div>
+                            </div>
+                            <ChevronRight size={16} className="text-muted-foreground" />
+                        </button>
+                    </div>
+                </section>
+            )}
 
             {/* Appearance Section */}
             <section className="space-y-3">

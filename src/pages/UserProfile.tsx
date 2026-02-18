@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase';
 import { POPULAR_SERVICES } from '../data/services';
 import ServiceIcon from '../components/ServiceIcon';
 import { ArrowLeft, Lock, User, RefreshCw, Share2 } from 'lucide-react';
-import { formatCurrency } from '../utils/calculations';
 
 interface PublicSubscription {
     id: string;

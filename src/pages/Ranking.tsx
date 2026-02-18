@@ -180,7 +180,12 @@ const Ranking: React.FC = () => {
             service_id: serviceId
         }, { onConflict: 'user_id, vote_type' });
 
-        if (error) alert('投票に失敗しました。');
+        if (error) {
+            alert('投票に失敗しました。');
+        } else {
+            // Manually trigger fetch to update UI immediately
+            fetchVoteData();
+        }
     };
 
     const getService = (id: string) => POPULAR_SERVICES.find(s => s.id === id) || {
