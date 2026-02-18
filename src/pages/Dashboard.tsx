@@ -6,10 +6,13 @@ import { calculateTotal, formatCurrency } from '../utils/calculations';
 import { POPULAR_SERVICES } from '../data/services';
 import { Trash2, Star, MoreVertical, X, Calendar, FileText } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
+import { useAuth } from '../contexts/AuthContext';
+import { loadFromCloud } from '../utils/sync';
 import ServiceIcon from '../components/ServiceIcon';
 
 const Dashboard: React.FC = () => {
     const { currency, exchangeRate } = useSettings();
+    const { user } = useAuth();
     const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
     const [loading, setLoading] = useState(true);
     const [sortMode, setSortMode] = useState<'default' | 'price_desc' | 'price_asc' | 'name_asc'>('default');
@@ -23,10 +26,26 @@ const Dashboard: React.FC = () => {
 
 
     useEffect(() => {
-        const loadedSubs = loadSubscriptions();
-        setSubscriptions(loadedSubs);
-        setLoading(false);
-    }, []);
+        const init = async () => {
+            // 1. Load local immediately
+            const loadedSubs = loadSubscriptions();
+            setSubscriptions(loadedSubs);
+            setLoading(false);
+
+            // 2. Sync from cloud if logged in
+            if (user) {
+                try {
+                    const cloudSubs = await loadFromCloud(user.id);
+                    if (cloudSubs) {
+                        setSubscriptions(cloudSubs);
+                    }
+                } catch (error) {
+                    console.error('Failed to sync from cloud:', error);
+                }
+            }
+        };
+        init();
+    }, [user]);
 
     // Sticky card observer
     const summaryRef = useRef<HTMLDivElement>(null);

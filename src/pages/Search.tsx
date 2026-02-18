@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { POPULAR_SERVICES } from '../data/services';
-import type { Plan, Service, ServiceCategory } from '../types';
+import type { Plan, Service, ServiceCategory, UserSubscription } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
 import { Search as SearchIcon, X, Check, ChevronDown, Plus, Info, Camera, ZoomIn, ZoomOut, Upload } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
@@ -53,9 +53,30 @@ const Search: React.FC = () => {
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
     const [uploadingIcon, setUploadingIcon] = useState(false);
 
+    // Manual Price State for Preset Services
+    const [isManualPriceMode, setIsManualPriceMode] = useState(false);
+    const [manualPrice, setManualPrice] = useState('');
+    const [manualCycle, setManualCycle] = useState<'monthly' | 'yearly'>('monthly');
+
     // Selection state
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+
+    const handleSelectService = (service: Service) => {
+        if (selectedService?.id === service.id) {
+            setSelectedService(null);
+            setSelectedPlan(null);
+            setIsManualPriceMode(false);
+            setManualPrice('');
+            setManualCycle('monthly');
+        } else {
+            setSelectedService(service);
+            setSelectedPlan(null);
+            setIsManualPriceMode(false);
+            setManualPrice('');
+            setManualCycle('monthly');
+        }
+    };
 
     // Load registered subscriptions to grey them out
     const registeredServiceIds = new Set(loadSubscriptions().map(s => s.serviceId));
@@ -73,16 +94,22 @@ const Search: React.FC = () => {
     });
 
     const handleAddSubscription = () => {
-        if (!selectedService || !selectedPlan) return;
+        if (!selectedService || (!selectedPlan && !isManualPriceMode)) return;
 
         const subs = loadSubscriptions();
-        const newSub = {
+
+        const price = isManualPriceMode ? Number(manualPrice) : selectedPlan!.price;
+        const cycle = isManualPriceMode ? manualCycle : selectedPlan!.cycle;
+        const planId = isManualPriceMode ? 'custom_price' : selectedPlan!.id;
+        const currency = isManualPriceMode ? 'JPY' : selectedPlan!.currency;
+
+        const newSub: UserSubscription = {
             id: crypto.randomUUID(),
             serviceId: selectedService.id,
-            planId: selectedPlan.id,
-            price: selectedPlan.price,
-            currency: selectedPlan.currency, // storing original currency
-            cycle: selectedPlan.cycle,
+            planId: planId,
+            price: price,
+            currency: currency,
+            cycle: cycle,
             startDate: new Date().toISOString(),
             isActive: true,
         };
@@ -169,15 +196,7 @@ const Search: React.FC = () => {
                         {/* Service Header */}
                         <div
                             className="p-4 flex items-center justify-between cursor-pointer"
-                            onClick={() => {
-                                if (selectedService?.id === service.id) {
-                                    setSelectedService(null);
-                                    setSelectedPlan(null);
-                                } else {
-                                    setSelectedService(service);
-                                    setSelectedPlan(null);
-                                }
-                            }}
+                            onClick={() => handleSelectService(service)}
                         >
                             <div className="flex items-center space-x-4">
                                 <ServiceIcon
@@ -212,28 +231,81 @@ const Search: React.FC = () => {
                         {selectedService?.id === service.id && (
                             <div className="px-4 pb-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
                                 <div className="h-px bg-border w-full mb-3" />
-                                <p className="text-xs text-muted-foreground mb-2">プランを選択してください:</p>
-                                {service.plans.map((plan) => (
+
+                                {/* Manual Price Toggle */}
+                                <div className="flex items-center justify-between mb-4 bg-muted/30 p-2 rounded-lg">
+                                    <span className="text-xs font-bold text-muted-foreground">金額を自分で入力</span>
                                     <button
-                                        key={plan.id}
-                                        onClick={() => setSelectedPlan(plan)}
-                                        className={`w-full flex items-center justify-between p-3 rounded-lg text-sm border transition-all ${selectedPlan?.id === plan.id
-                                            ? 'bg-primary/10 border-primary text-primary'
-                                            : 'bg-muted border-border text-foreground hover:bg-muted/80'
+                                        onClick={() => {
+                                            setIsManualPriceMode(!isManualPriceMode);
+                                            setSelectedPlan(null);
+                                        }}
+                                        className={`w-11 h-6 flex items-center rounded-full transition-colors focus:outline-none p-1 ${isManualPriceMode ? 'bg-primary' : 'bg-muted-foreground/30'
                                             }`}
                                     >
-                                        <span>{plan.name}</span>
-                                        <div className="flex items-center space-x-3">
-                                            <span className="font-bold">
-                                                {formatCurrency(plan.price, currency, exchangeRate)}
-                                            </span>
-                                            {selectedPlan?.id === plan.id && <Check size={16} />}
-                                        </div>
+                                        <div
+                                            className={`bg-white w-4 h-4 rounded-full shadow-sm transform duration-200 ${isManualPriceMode ? 'translate-x-5' : 'translate-x-0'
+                                                }`}
+                                        />
                                     </button>
-                                ))}
+                                </div>
+
+                                {isManualPriceMode ? (
+                                    <div className="space-y-3 animate-in fade-in duration-200">
+                                        <div>
+                                            <label className="block text-xs text-muted-foreground mb-1">金額 (円)</label>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-muted border border-border rounded-lg p-3 text-foreground focus:outline-none focus:border-primary"
+                                                value={manualPrice}
+                                                onChange={(e) => setManualPrice(e.target.value)}
+                                                placeholder="例: 980"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-muted-foreground mb-1">支払いサイクル</label>
+                                            <div className="flex bg-muted p-1 rounded-lg">
+                                                <button
+                                                    onClick={() => setManualCycle('monthly')}
+                                                    className={`flex-1 py-2 text-sm rounded-md transition-all ${manualCycle === 'monthly' ? 'bg-background text-foreground shadow' : 'text-muted-foreground'}`}
+                                                >
+                                                    月額
+                                                </button>
+                                                <button
+                                                    onClick={() => setManualCycle('yearly')}
+                                                    className={`flex-1 py-2 text-sm rounded-md transition-all ${manualCycle === 'yearly' ? 'bg-background text-foreground shadow' : 'text-muted-foreground'}`}
+                                                >
+                                                    年額
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <p className="text-xs text-muted-foreground mb-2">プランを選択してください:</p>
+                                        {service.plans.map((plan) => (
+                                            <button
+                                                key={plan.id}
+                                                onClick={() => setSelectedPlan(plan)}
+                                                className={`w-full flex items-center justify-between p-3 rounded-lg text-sm border transition-all ${selectedPlan?.id === plan.id
+                                                    ? 'bg-primary/10 border-primary text-primary'
+                                                    : 'bg-muted border-border text-foreground hover:bg-muted/80'
+                                                    }`}
+                                            >
+                                                <span>{plan.name}</span>
+                                                <div className="flex items-center space-x-3">
+                                                    <span className="font-bold">
+                                                        {formatCurrency(plan.price, currency, exchangeRate)}
+                                                    </span>
+                                                    {selectedPlan?.id === plan.id && <Check size={16} />}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </>
+                                )}
 
                                 <button
-                                    disabled={!selectedPlan}
+                                    disabled={(!selectedPlan && !isManualPriceMode) || (isManualPriceMode && !manualPrice)}
                                     onClick={handleAddSubscription}
                                     className="w-full mt-4 py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/25 transition-all"
                                 >
