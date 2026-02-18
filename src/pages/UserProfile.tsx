@@ -163,6 +163,30 @@ const UserProfile: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Cost Breakdown */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center">
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">月額払い合計</p>
+                        <p className="text-xl font-black text-foreground">
+                            ¥{subscriptions.filter(s => s.cycle === 'monthly').reduce((acc, s) => acc + s.price, 0).toLocaleString()}
+                        </p>
+                    </div>
+                    <div className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center">
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">年額払い合計</p>
+                        <p className="text-xl font-black text-foreground">
+                            ¥{subscriptions.filter(s => s.cycle === 'yearly').reduce((acc, s) => acc + s.price, 0).toLocaleString()}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-2xl p-4 border border-primary/20 text-center">
+                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">換算月額合計 (推定)</p>
+                    <p className="text-2xl font-black text-foreground">
+                        ¥{totalMonthly.toLocaleString()}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1 opacity-70">※年額払いを12ヶ月で割って合算しています</p>
+                </div>
+
                 {/* List Header */}
                 <div className="flex items-center justify-between px-2">
                     <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">登録サブスク</h2>
