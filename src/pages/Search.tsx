@@ -44,11 +44,20 @@ const Search: React.FC = () => {
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
+    // Load registered subscriptions to grey them out
+    const registeredServiceIds = new Set(loadSubscriptions().map(s => s.serviceId));
+
     const filteredServices = POPULAR_SERVICES.filter(service => {
         const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === 'All' || service.category === selectedCategory;
         return matchesSearch && matchesCategory;
-    }).sort((a, b) => a.name.localeCompare(b.name));
+    }).sort((a, b) => {
+        // Registered services go to the bottom
+        const aReg = registeredServiceIds.has(a.id) ? 1 : 0;
+        const bReg = registeredServiceIds.has(b.id) ? 1 : 0;
+        if (aReg !== bReg) return aReg - bReg;
+        return a.name.localeCompare(b.name);
+    });
 
     const handleAddSubscription = () => {
         if (!selectedService || !selectedPlan) return;
@@ -137,9 +146,11 @@ const Search: React.FC = () => {
                 {filteredServices.map((service) => (
                     <div
                         key={service.id}
-                        className={`bg-card rounded-xl border transition-all duration-200 overflow-hidden ${selectedService?.id === service.id
-                            ? 'border-primary ring-1 ring-primary shadow-lg shadow-primary/10'
-                            : 'border-border hover:border-gray-400'
+                        className={`bg-card rounded-xl border transition-all duration-200 overflow-hidden ${registeredServiceIds.has(service.id)
+                                ? 'border-border opacity-50 grayscale-[30%]'
+                                : selectedService?.id === service.id
+                                    ? 'border-primary ring-1 ring-primary shadow-lg shadow-primary/10'
+                                    : 'border-border hover:border-gray-400'
                             }`}
                     >
                         {/* Service Header */}
@@ -163,6 +174,9 @@ const Search: React.FC = () => {
                                     className="w-10 h-10 shadow-sm"
                                 />
                                 <span className="font-bold text-foreground">{service.name}</span>
+                                {registeredServiceIds.has(service.id) && (
+                                    <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-bold">登録済み</span>
+                                )}
                             </div>
                             <div className="flex items-center space-x-2">
                                 <button
