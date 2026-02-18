@@ -6,47 +6,73 @@ import type { UserSubscription } from '../types';
 export const syncToCloud = async (userId: string) => {
     const localSubs = loadSubscriptions();
 
-    // 1. Delete existing cloud subs for this user (Simple "Replace All" strategy for MVP)
-    const { error: deleteError } = await supabase
-        .from('user_subscriptions')
-        .delete()
-        .eq('user_id', userId);
-
-    if (deleteError) {
-        console.error('Error clearing old cloud data:', deleteError);
-        throw deleteError;
+    if (localSubs.length === 0) {
+        // If local is empty, we should clear cloud too
+        // But we should be careful not to wipe cloud if local is just "fresh"
+        // Assuming "local empty" means "user deleted everything" if they have logged in before.
+        // For safety, let's just delete everything.
+        const { error } = await supabase.from('user_subscriptions').delete().eq('user_id', userId);
+        if (error) throw error;
+        return;
     }
 
-    if (localSubs.length === 0) return;
-
-    // 2. Format local data for DB
-    const subsToInsert = localSubs.map(sub => {
+    // 1. Format local data for DB (Include ID for upsert)
+    const subsToUpsert = localSubs.map(sub => {
         const service = POPULAR_SERVICES.find(s => s.id === sub.serviceId);
-
         return {
+            id: sub.id, // IMPORTANT: Maintain ID stability
             user_id: userId,
             service_id: sub.serviceId,
-            name_custom: !service ? sub.customName : null, // Store name only if custom
+            name_custom: !service ? sub.customName : null,
             price: sub.price,
             currency: sub.currency,
             cycle: sub.cycle,
             category: service?.category || 'Other',
             is_active: sub.isActive,
             updated_at: new Date().toISOString(),
-            custom_icon: sub.customIcon, // Save custom icon URL
+            custom_icon: sub.customIcon,
             renewal_date: sub.renewalDate,
             memo: sub.memo,
         };
     });
 
-    // 3. Insert new data
-    const { error: insertError } = await supabase
+    // 2. Upsert (Insert or Update)
+    const { error: upsertError } = await supabase
         .from('user_subscriptions')
-        .insert(subsToInsert);
+        .upsert(subsToUpsert, { onConflict: 'id' });
 
-    if (insertError) {
-        console.error('Error syncing to cloud:', insertError);
-        throw insertError;
+    if (upsertError) {
+        console.error('Error syncing (upsert):', upsertError);
+        throw upsertError;
+    }
+
+    // 3. Delete items that are in Cloud but NOT in Local
+    // Verify what's in Cloud now
+    const { data: cloudData, error: fetchError } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('user_id', userId);
+
+    if (fetchError) {
+        console.error('Error fetching for cleanup:', fetchError);
+        // Don't throw here, upsert succeeded so main data is safe.
+        return;
+    }
+
+    if (cloudData) {
+        const localIds = new Set(localSubs.map(s => s.id));
+        const idsToDelete = cloudData
+            .filter(row => !localIds.has(row.id))
+            .map(row => row.id);
+
+        if (idsToDelete.length > 0) {
+            const { error: deleteError } = await supabase
+                .from('user_subscriptions')
+                .delete()
+                .in('id', idsToDelete);
+
+            if (deleteError) console.error('Error cleaning up old subs:', deleteError);
+        }
     }
 
     return true;
