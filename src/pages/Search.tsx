@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../utils/calculations';
 import ServiceIcon from '../components/ServiceIcon';
 import { supabase } from '../lib/supabase';
+import { syncToCloud } from '../utils/sync';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
@@ -52,6 +53,7 @@ const Search: React.FC = () => {
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
     const [uploadingIcon, setUploadingIcon] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Manual Price State for Preset Services
     const [isManualPriceMode, setIsManualPriceMode] = useState(false);
@@ -93,50 +95,74 @@ const Search: React.FC = () => {
         return a.name.localeCompare(b.name);
     });
 
-    const handleAddSubscription = () => {
+    const handleAddSubscription = async () => {
         if (!selectedService || (!selectedPlan && !isManualPriceMode)) return;
 
-        const subs = loadSubscriptions();
+        setIsSaving(true);
+        try {
+            const subs = loadSubscriptions();
 
-        const price = isManualPriceMode ? Number(manualPrice) : selectedPlan!.price;
-        const cycle = isManualPriceMode ? manualCycle : selectedPlan!.cycle;
-        const planId = isManualPriceMode ? 'custom_price' : selectedPlan!.id;
-        const currency = isManualPriceMode ? 'JPY' : selectedPlan!.currency;
+            const price = isManualPriceMode ? Number(manualPrice) : selectedPlan!.price;
+            const cycle = isManualPriceMode ? manualCycle : selectedPlan!.cycle;
+            const planId = isManualPriceMode ? 'custom_price' : selectedPlan!.id;
+            const currency = isManualPriceMode ? 'JPY' : selectedPlan!.currency;
 
-        const newSub: UserSubscription = {
-            id: crypto.randomUUID(),
-            serviceId: selectedService.id,
-            planId: planId,
-            price: price,
-            currency: currency,
-            cycle: cycle,
-            startDate: new Date().toISOString(),
-            isActive: true,
-        };
-        saveSubscriptions([...subs, newSub]);
-        navigate('/');
+            const newSub: UserSubscription = {
+                id: crypto.randomUUID(),
+                serviceId: selectedService.id,
+                planId: planId,
+                price: price,
+                currency: currency,
+                cycle: cycle,
+                startDate: new Date().toISOString(),
+                isActive: true,
+            };
+            saveSubscriptions([...subs, newSub]);
+
+            if (user) {
+                await syncToCloud(user.id);
+            }
+
+            navigate('/');
+        } catch (error) {
+            console.error('Save failed:', error);
+            alert('保存に失敗しました。');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    const handleAddCustomSubscription = () => {
+    const handleAddCustomSubscription = async () => {
         if (!customName || !customPrice) return;
 
-        const subs = loadSubscriptions();
-        const newSub: any = {
-            id: crypto.randomUUID(),
-            serviceId: 'custom',
-            planId: 'custom_plan',
-            customName,
-            price: Number(customPrice),
-            currency: 'JPY',
-            cycle: customCycle,
-            startDate: new Date().toISOString(),
-            isActive: true,
-        };
-        if (customIconUrl.trim()) {
-            newSub.customIcon = customIconUrl.trim();
+        setIsSaving(true);
+        try {
+            const subs = loadSubscriptions();
+            const newSub: UserSubscription = {
+                id: crypto.randomUUID(),
+                serviceId: 'custom',
+                planId: 'custom',
+                customName,
+                price: parseInt(customPrice),
+                currency: 'JPY',
+                cycle: customCycle,
+                startDate: new Date().toISOString(),
+                isActive: true,
+                customIcon: customIconUrl || undefined,
+            };
+            saveSubscriptions([...subs, newSub]);
+
+            if (user) {
+                await syncToCloud(user.id);
+            }
+
+            navigate('/');
+        } catch (error) {
+            console.error('Save failed:', error);
+            alert('保存に失敗しました。');
+        } finally {
+            setIsSaving(false);
         }
-        saveSubscriptions([...subs, newSub]);
-        navigate('/');
     };
 
     return (
@@ -305,11 +331,11 @@ const Search: React.FC = () => {
                                 )}
 
                                 <button
-                                    disabled={(!selectedPlan && !isManualPriceMode) || (isManualPriceMode && !manualPrice)}
+                                    disabled={(!selectedPlan && !isManualPriceMode) || (isManualPriceMode && !manualPrice) || isSaving}
                                     onClick={handleAddSubscription}
-                                    className="w-full mt-4 py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/25 transition-all"
+                                    className="w-full mt-4 py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/25 transition-all flex items-center justify-center"
                                 >
-                                    追加する
+                                    {isSaving ? '保存中...' : '追加する'}
                                 </button>
                             </div>
                         )}
@@ -438,9 +464,10 @@ const Search: React.FC = () => {
 
                             <button
                                 onClick={handleAddCustomSubscription}
-                                className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/25 mt-2"
+                                disabled={!customName || !customPrice || isSaving}
+                                className="w-full py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/25 transition-all flex items-center justify-center"
                             >
-                                定額リストに追加
+                                {isSaving ? '保存中...' : '追加する'}
                             </button>
                         </div>
                     </div>

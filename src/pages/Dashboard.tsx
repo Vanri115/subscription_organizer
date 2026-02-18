@@ -7,7 +7,7 @@ import { POPULAR_SERVICES } from '../data/services';
 import { Trash2, Star, MoreVertical, X, Calendar, FileText } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
-import { loadFromCloud } from '../utils/sync';
+import { loadFromCloud, syncToCloud } from '../utils/sync';
 import ServiceIcon from '../components/ServiceIcon';
 
 const Dashboard: React.FC = () => {
@@ -135,23 +135,24 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const handleToggleActive = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        const updatedSubs = subscriptions.map(sub =>
-            sub.id === id ? { ...sub, isActive: !sub.isActive } : sub
+    const handleToggleActive = (sub: UserSubscription) => {
+        const updatedSubs = subscriptions.map(s =>
+            s.id === sub.id ? { ...s, isActive: !s.isActive } : s
         );
         setSubscriptions(updatedSubs);
         saveSubscriptions(updatedSubs);
+        if (user) syncToCloud(user.id);
     };
 
-    const handleDelete = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (window.confirm('本当に削除しますか？')) {
-            const updatedSubs = subscriptions.filter(sub => sub.id !== id);
-            setSubscriptions(updatedSubs);
-            saveSubscriptions(updatedSubs);
-        }
+    const handleDelete = (id: string) => {
+        if (!confirm('本当に削除しますか？')) return;
+        const updatedSubs = subscriptions.filter(s => s.id !== id);
+        setSubscriptions(updatedSubs);
+        saveSubscriptions(updatedSubs);
+        if (user) syncToCloud(user.id);
     };
+
+
 
     const openMemoModal = (sub: UserSubscription, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -167,6 +168,7 @@ const Dashboard: React.FC = () => {
         );
         setSubscriptions(updatedSubs);
         saveSubscriptions(updatedSubs);
+        if (user) syncToCloud(user.id);
         setEditingSub(null);
     };
 
@@ -332,7 +334,10 @@ const Dashboard: React.FC = () => {
                                                     <MoreVertical size={14} />
                                                 </button>
                                                 <button
-                                                    onClick={(e) => handleDelete(sub.id, e)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(sub.id);
+                                                    }}
                                                     className="text-muted-foreground/50 hover:text-destructive p-1 rounded-full hover:bg-muted transition-colors"
                                                 >
                                                     <Trash2 size={13} />
@@ -374,7 +379,10 @@ const Dashboard: React.FC = () => {
                                             <div className="flex items-center mb-0.5 shrink-0">
                                                 {/* Tiny Toggle */}
                                                 <button
-                                                    onClick={(e) => handleToggleActive(sub.id, e)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleToggleActive(sub);
+                                                    }}
                                                     className={`w-9 h-5 flex items-center rounded-full transition-colors focus:outline-none p-1 ${sub.isActive ? 'bg-emerald-500/20' : 'bg-muted-foreground/30'
                                                         }`}
                                                 >
