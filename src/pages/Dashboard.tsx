@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { UserSubscription, ServiceCategory } from '../types';
 import { loadSubscriptions, saveSubscriptions } from '../utils/storage';
@@ -27,6 +27,21 @@ const Dashboard: React.FC = () => {
         setSubscriptions(loadedSubs);
         setLoading(false);
     }, []);
+
+    // Sticky card observer
+    const summaryRef = useRef<HTMLDivElement>(null);
+    const [showSticky, setShowSticky] = useState(false);
+
+    useEffect(() => {
+        const el = summaryRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => setShowSticky(!entry.isIntersecting),
+            { threshold: 0.1 }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [loading]);
 
     // Helper to get numeric value for sorting (defined before use)
     const formatCurrencyNumeric = (amount: number, fromCurrency: string, toCurrency: string, rate: number | null) => {
@@ -166,7 +181,7 @@ const Dashboard: React.FC = () => {
             </header>
 
             {/* Summary Card */}
-            <div className="relative overflow-hidden rounded-2xl p-6 shadow-xl border border-border/50 bg-gradient-to-br from-card to-background">
+            <div ref={summaryRef} className="relative overflow-hidden rounded-2xl p-6 shadow-xl border border-border/50 bg-gradient-to-br from-card to-background">
                 <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-primary/10 blur-3xl opacity-50" />
                 <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl opacity-50" />
 
@@ -192,6 +207,31 @@ const Dashboard: React.FC = () => {
                         </div>
 
                         {/* Savings moved to floating display */}
+                    </div>
+                </div>
+            </div>
+
+            {/* Sticky Mini Summary */}
+            <div
+                className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${showSticky ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
+                    }`}
+            >
+                <div className="max-w-md mx-auto px-4 pt-2 pb-2">
+                    <div className="flex items-center justify-between bg-card/90 backdrop-blur-xl border border-border shadow-lg rounded-xl px-4 py-2">
+                        <div>
+                            <p className="text-[10px] text-muted-foreground font-medium">月額合計</p>
+                            <p className="text-lg font-extrabold text-foreground leading-tight">
+                                {formatCurrency(monthlyTotal, currency, exchangeRate)}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-emerald-500 font-semibold">
+                                年 {formatCurrency(yearlyTotal, currency, exchangeRate)}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                                {subscriptions.filter(s => s.isActive).length}件
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
