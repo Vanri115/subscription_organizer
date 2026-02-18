@@ -755,6 +755,16 @@ export const POPULAR_SERVICES: Service[] = [
 
     // --- AI ---
     {
+        id: 'gemini_advanced',
+        name: 'Gemini Advanced',
+        color: '#4285F4', // Google Blue
+        url: 'gemini.google.com',
+        category: 'AI',
+        plans: [
+            { id: 'ai_premium', name: 'Google One AI Premium', price: 2900, currency: 'JPY', cycle: 'monthly' },
+        ],
+    },
+    {
         id: 'claude_pro',
         name: 'Claude Pro',
         color: '#D97757',
