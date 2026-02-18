@@ -16,7 +16,7 @@ import {
     getIntensity,
     toMonthly,
 } from '../utils/analytics';
-import { getSnapshots, getAvailableYears, getYearlyReport } from '../utils/snapshot';
+import { getAvailableYears, getYearlyReport } from '../utils/snapshot';
 
 const CATEGORY_LABELS: Record<string, string> = {
     'All': 'すべて', 'Video': '動画', 'Music': '音楽', 'Book': '書籍',
