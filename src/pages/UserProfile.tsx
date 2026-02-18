@@ -163,41 +163,20 @@ const UserProfile: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Cost Breakdown */}
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center">
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">月額払い合計</p>
-                        <p className="text-xl font-black text-foreground">
-                            ¥{subscriptions.filter(s => s.cycle === 'monthly').reduce((acc, s) => acc + s.price, 0).toLocaleString()}
-                        </p>
-                    </div>
-                    <div className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center">
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">年額払い合計</p>
-                        <p className="text-xl font-black text-foreground">
-                            ¥{subscriptions.filter(s => s.cycle === 'yearly').reduce((acc, s) => acc + s.price, 0).toLocaleString()}
-                        </p>
-                    </div>
-                </div>
-
+                {/* Total Estimate */}
                 <div className="bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-2xl p-4 border border-primary/20 text-center">
                     <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">換算月額合計 (推定)</p>
-                    <p className="text-2xl font-black text-foreground">
+                    <p className="text-3xl font-black text-foreground">
                         ¥{totalMonthly.toLocaleString()}
                     </p>
                     <p className="text-[10px] text-muted-foreground mt-1 opacity-70">※年額払いを12ヶ月で割って合算しています</p>
                 </div>
 
-                {/* List Header */}
-                <div className="flex items-center justify-between px-2">
-                    <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">登録サブスク</h2>
-                </div>
-
-                {/* List */}
-                <div className="space-y-3">
-                    {subscriptions.length === 0 ? (
-                        <p className="text-center text-sm text-muted-foreground py-8">公開されているサブスクはありません</p>
-                    ) : (
-                        subscriptions.map(sub => {
+                {/* List: Monthly */}
+                {subscriptions.some(s => s.cycle === 'monthly') && (
+                    <div className="space-y-3">
+                        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider px-2">月額払い</h2>
+                        {subscriptions.filter(s => s.cycle === 'monthly').map(sub => {
                             const service = POPULAR_SERVICES.find(s => s.id === sub.service_id);
                             const name = service ? service.name : sub.name_custom || 'Unknown';
                             const color = service ? service.color : '#888';
@@ -213,18 +192,62 @@ const UserProfile: React.FC = () => {
                                     />
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-bold text-sm truncate">{name}</h3>
-                                        <p className="text-xs text-muted-foreground">{sub.cycle === 'yearly' ? '年額' : '月額'}</p>
+                                        <p className="text-xs text-muted-foreground">{service?.category || 'General'}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="font-bold text-sm">
-                                            {formatCurrency(sub.price, sub.currency, 1)}
+                                        <p className="font-bold text-sm text-foreground">
+                                            ¥{sub.price.toLocaleString()}
                                         </p>
+                                        <p className="text-[10px] text-muted-foreground">/ 月</p>
                                     </div>
                                 </div>
                             );
-                        })
-                    )}
-                </div>
+                        })}
+                    </div>
+                )}
+
+                {/* List: Yearly */}
+                {subscriptions.some(s => s.cycle === 'yearly') && (
+                    <div className="space-y-3">
+                        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider px-2 mt-4">年額払い</h2>
+                        {subscriptions.filter(s => s.cycle === 'yearly').map(sub => {
+                            const service = POPULAR_SERVICES.find(s => s.id === sub.service_id);
+                            const name = service ? service.name : sub.name_custom || 'Unknown';
+                            const color = service ? service.color : '#888';
+                            const url = service?.url;
+
+                            return (
+                                <div key={sub.id} className="bg-card border border-border rounded-xl p-3 shadow-sm flex items-center relative overflow-hidden">
+                                    {/* Yearly Badge */}
+                                    <div className="absolute top-0 right-0 bg-blue-500 text-white text-[9px] px-2 py-0.5 rounded-bl-lg font-bold z-10">
+                                        YEARLY
+                                    </div>
+
+                                    <ServiceIcon
+                                        serviceName={name}
+                                        serviceColor={color}
+                                        domain={url}
+                                        className="w-10 h-10 mr-3 shadow-sm"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold text-sm truncate">{name}</h3>
+                                        <p className="text-xs text-muted-foreground">{service?.category || 'General'}</p>
+                                    </div>
+                                    <div className="text-right mt-2">
+                                        <p className="font-bold text-sm text-foreground">
+                                            ¥{sub.price.toLocaleString()}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground">/ 年</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {subscriptions.length === 0 && (
+                    <p className="text-center text-sm text-muted-foreground py-8">公開されているサブスクはありません</p>
+                )}
 
             </div>
         </div>
